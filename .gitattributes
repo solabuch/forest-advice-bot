@@ -1,0 +1,17 @@
+# Текст — завжди LF: dev на Windows, а CRLF у .sh ламає контейнер
+* text=auto eol=lf
+
+# Бінарні формати
+*.pdf  binary
+*.doc  binary
+*.docx binary
+*.odt  binary
+*.rtf  binary
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.onnx binary
+
+# Байти як на Google Диску: зміни архіву визначаються за sha256
+data/archive/** -text
+examples/**     -text

@@ -1,0 +1,36 @@
+# Локальні робочі документи — не комітимо
+docs/specs/
+# Сирий транскрипт із телефоном; у репо — docs/transcript.md з маскою
+gjxfnjr
+
+# Секрети
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+
+# Кеші інструментів
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Результати eval і локальні дані
+eval/results/
+.data/
+
+# IDE та ОС
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
