@@ -1,6 +1,8 @@
 """CLI: коди виходу й повідомлення для людини."""
 
 import shutil
+import subprocess
+import sys
 
 import pytest
 
@@ -46,3 +48,15 @@ def test_migrate_does_not_need_bot_tokens(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(db, "migrate", fake_migrate)
     assert main(["migrate"]) == 0
     assert len(called) == 1
+
+
+def test_health_command_stays_light() -> None:
+    # Docker викликає health кожні 30 с; імпорт aiogram робив його довшим за таймаут
+    code = (
+        "import sys; from forest_bot.__main__ import main; main(['health']); "
+        "print(sorted({'aiogram', 'pydantic', 'sqlalchemy', 'asyncio'} & set(sys.modules)))"
+    )
+    result = subprocess.run(  # noqa: S603 — власний інтерпретатор, сталий код
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    )
+    assert result.stdout.strip() == "[]"

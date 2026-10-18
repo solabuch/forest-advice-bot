@@ -1,19 +1,22 @@
-"""Точка входу: python -m forest_bot <команда>."""
+"""Точка входу: python -m forest_bot <команда>.
+
+Важкі модулі (aiogram, SQLAlchemy, pydantic) імпортуються лише в командах, яким вони
+потрібні: `health` Docker викликає кожні 30 с, і він має вкладатися в мілісекунди.
+"""
+
+from __future__ import annotations
 
 import argparse
-import asyncio
 import logging
 import sys
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
-from forest_bot import __version__, bot, db, health, startup
-from forest_bot.config import (
-    ConfigError,
-    DatabaseSettings,
-    load_database_settings,
-    load_settings,
-)
+from forest_bot import __version__, health
 from forest_bot.logs import setup_logging
+
+if TYPE_CHECKING:
+    from forest_bot.config import ConfigError, DatabaseSettings
 
 logger = logging.getLogger("forest_bot")
 
@@ -46,23 +49,24 @@ def _start_logging(settings: DatabaseSettings, command: str) -> None:
     logger.info("forest_bot %s, команда %s", __version__, command)
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Розбирає команду, читає конфіг і запускає; повертає код виходу."""
-    args = build_parser().parse_args(argv)
-    command = args.command or "run"
-
-    # health викликає Docker кожні N секунд — без конфігу й логів
-    if command == "health":
-        return 0 if health.is_alive() else 1
+def _migrate() -> int:
+    from forest_bot import db
+    from forest_bot.config import ConfigError, load_database_settings
 
     # Міграціям потрібна лише БД: без токенів бота вони теж мають пройти
-    if command == "migrate":
-        try:
-            db_settings = load_database_settings()
-        except ConfigError as error:
-            return _config_failed(error)
-        _start_logging(db_settings, command)
-        return db.migrate(db_settings)
+    try:
+        settings = load_database_settings()
+    except ConfigError as error:
+        return _config_failed(error)
+    _start_logging(settings, "migrate")
+    return db.migrate(settings)
+
+
+def _check_or_run(command: str, args: argparse.Namespace) -> int:
+    import asyncio
+
+    from forest_bot import bot, startup
+    from forest_bot.config import ConfigError, load_settings
 
     try:
         settings = load_settings()
@@ -79,6 +83,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         return asyncio.run(bot.run(settings))
     except KeyboardInterrupt:
         return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Розбирає команду й запускає її; повертає код виходу."""
+    args = build_parser().parse_args(argv)
+    command = args.command or "run"
+    if command == "health":
+        return 0 if health.is_alive() else 1
+    if command == "migrate":
+        return _migrate()
+    return _check_or_run(command, args)
 
 
 if __name__ == "__main__":
