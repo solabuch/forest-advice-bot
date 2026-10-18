@@ -65,6 +65,12 @@ jobs:
           version: ${{ env.UV_VERSION }}
           enable-cache: true
       - run: uv sync --locked
+      # Модель embeddings (~135 МБ) — з кешу; ключ — скрипт із ревізією й sha256
+      - uses: actions/cache@v6
+        with:
+          path: .data/models
+          key: model-${{ hashFiles('scripts/fetch_model.py') }}
+      - run: uv run poe model
       - run: uv run pytest --junitxml=junit.xml --cov-report=markdown-append:"$GITHUB_STEP_SUMMARY"
 
   secrets:

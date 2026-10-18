@@ -75,6 +75,8 @@ class Settings(DatabaseSettings):
     groq_models: Annotated[list[str], NoDecode] = Field(default_factory=list)
     # Свій файл місць замість вбудованого (D-21); None — forest_bot/data/places.yaml
     places_file: Path | None = None
+    # Модель embeddings; в образі — /opt/models/…, локально — uv run poe model
+    embedding_model_dir: Path = Path(".data/models/multilingual-e5-small")
 
     @field_validator("telegram_bot_token", "groq_api_key", mode="before")
     @classmethod

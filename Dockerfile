@@ -23,6 +23,11 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable
 
+# --- модель embeddings: окремий шар, кешується, поки не змінився скрипт ---
+FROM ${PYTHON_IMAGE} AS model
+COPY scripts/fetch_model.py /tmp/fetch_model.py
+RUN python /tmp/fetch_model.py /opt/models/multilingual-e5-small
+
 # --- runtime ---
 FROM ${PYTHON_IMAGE} AS runtime
 # OCR сканів (ukr + eng) і старі .doc
@@ -34,8 +39,10 @@ RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --home-dir /app --shell /usr/sbin/nologin app \
     && mkdir -p /app /data \
     && chown app:app /app /data
+COPY --from=model /opt/models /opt/models
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:${PATH}" \
+    EMBEDDING_MODEL_DIR=/opt/models/multilingual-e5-small \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
