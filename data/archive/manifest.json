@@ -1,0 +1,707 @@
+{
+  "folder_id": "1b_hEjnkQfP8ZVP-OEbnYWqoGSFwXMAP3",
+  "files": [
+    {
+      "id": "1okSXljk-RcvJCS94MHR_mBduoRgJYZqg",
+      "name": "Їстівне й отруйне.pdf",
+      "file": "Їстівне й отруйне.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "96cbb4d52743158e82dcfa90ef12ece83381d1531ff989472172ba25641c3159",
+      "size": 471623
+    },
+    {
+      "id": "1_N5Sr7YHfG0VWFLlEpQeOx7kZuXz8wGp",
+      "name": "Броди і коли бобри відкривають греблю.pdf",
+      "file": "Броди і коли бобри відкривають греблю.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "15f85a04627e4c4ac8a018e24ddaa7ab486beb43bf4e9a6b6629d16de009e8fc",
+      "size": 464498
+    },
+    {
+      "id": "19Ct0ib0_DzwTPs475mpzKy97M8-9PZKn",
+      "name": "Грибний путівник біля річки.pdf",
+      "file": "Грибний путівник біля річки.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "6830831b178e256d079c2eeb0de40ac24398e9a54d910523fc2607e818f8518e",
+      "size": 464596
+    },
+    {
+      "id": "1KCEhHrZi5PZ9QoANsYg59W2KwMKz41Ry",
+      "name": "Грибний путівник листяного лісу.pdf",
+      "file": "Грибний путівник листяного лісу.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "a5423929158193e5dccb95bf1081df538f766b7016bb98496c1f085a72df8693",
+      "size": 463170
+    },
+    {
+      "id": "1omGGOgt3w2cGvNfB678rIVaYKEWrl5CI",
+      "name": "Грибний путівник хвойного лісу.pdf",
+      "file": "Грибний путівник хвойного лісу.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "1fb75e068dc6d5dda0b1b6356bf7f2952b8e53f24bcd584365bcab9361e4e3e0",
+      "size": 243596
+    },
+    {
+      "id": "1zHZkZSVrBy_-CDVimzK2E0hfDEOrM66U",
+      "name": "Календар сезонів.txt",
+      "file": "Календар сезонів.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "4a472f7ed650f742abe8130da7840de9d4576a460adde18426bee3c6375084e3",
+      "size": 1290
+    },
+    {
+      "id": "12x7-nd5orkAIWZvmUT3AHj6LH82f2enN",
+      "name": "Карта лісу.pdf",
+      "file": "Карта лісу.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "ff0224ab8b2489341832585d40e6b3e435a2904acd1550c66c22b1c046e51542",
+      "size": 458071
+    },
+    {
+      "id": "1CPWDko9j9A34Y_lCAdNmQzH22xCXm7E5",
+      "name": "Коли падають жолуді й горіхи.pdf",
+      "file": "Коли падають жолуді й горіхи.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "bfdc58e566675413b97924c4c4b7447f344f16c9991b03bafc06a9f2e1dcc886",
+      "size": 463123
+    },
+    {
+      "id": "1Zxy6Cl32GCTXsfRGWmxbN69QksvPQqM0",
+      "name": "Небезпеки біля річки.txt",
+      "file": "Небезпеки біля річки.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "7d7adf66088c755b1099a3fd5f6aab428008f3b160deeea691fd4edde33e4b9f",
+      "size": 1217
+    },
+    {
+      "id": "1eVKOcZUIs19Q5wdWNMaTuTP9OxKV95Ih",
+      "name": "Небезпеки листяного лісу.pdf",
+      "file": "Небезпеки листяного лісу.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "65d94ea2e3e219f09479ef77ecb39bbd68893357b2b2b683327d28e8b734c27b",
+      "size": 237603
+    },
+    {
+      "id": "1E_SHC98I1j-Qamz6SKQKlHIM39i6Zxas",
+      "name": "Небезпеки поруч із рукавичкою Біля бобрової греблі.pdf",
+      "file": "Небезпеки поруч із рукавичкою Біля бобрової греблі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "5147cfd2dd94283067d1d36d1d1caa11ab637bf7443dd39898c3a4f41e31dff2",
+      "size": 237653
+    },
+    {
+      "id": "1WV3ug-Q7A0PZYGDbhDzf9UloP4JbWU0o",
+      "name": "Небезпеки поруч із рукавичкою Біля мурашника.txt",
+      "file": "Небезпеки поруч із рукавичкою Біля мурашника.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "48c52b5db4475f6db611342873a14dc61b5e7df8b1a0a98408643ec3276bf5c9",
+      "size": 1136
+    },
+    {
+      "id": "1quxma429JQbED6HxgvZO2gSx8EZfk23e",
+      "name": "Небезпеки поруч із рукавичкою На узліссі.txt",
+      "file": "Небезпеки поруч із рукавичкою На узліссі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "e492b1ecdf2dea4406c868d179743e4e1411a42a0b07eec8a4218d5bfd99f437",
+      "size": 1012
+    },
+    {
+      "id": "14_kq3vCdEsYOzfRxXaKUxqkn1JQp525M",
+      "name": "Небезпеки поруч із рукавичкою Під вербою.txt",
+      "file": "Небезпеки поруч із рукавичкою Під вербою.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "cc44a5f679bd917b339f2f2d2f35a2f0c0dee25dcf11f99b1b127e968e8a6a41",
+      "size": 1116
+    },
+    {
+      "id": "1-Vm2E7RuwxvQBvgAbFe3VOzdvX2s8OG7",
+      "name": "Небезпеки поруч із рукавичкою Під дубом.txt",
+      "file": "Небезпеки поруч із рукавичкою Під дубом.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "0f61fcffcd05bd04640c262333b7b32ca3bff05b91f6d33ffa3dfc51ffc8ea78",
+      "size": 1302
+    },
+    {
+      "id": "1reJ8IU1hyqbMiR96B_dCasNGZ315KV_m",
+      "name": "Небезпеки поруч із рукавичкою Під ялиною.docx",
+      "file": "Небезпеки поруч із рукавичкою Під ялиною.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "90f2d7ca7357c567024c57d39e6e577e9de859cd25f08c40f49265bc36c07ae0",
+      "size": 37341
+    },
+    {
+      "id": "143vXNzIDF4uRaGG1RPePkZIxg40EMxQ1",
+      "name": "Небезпеки поруч із рукавичкою У ліщині.pdf",
+      "file": "Небезпеки поруч із рукавичкою У ліщині.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "6be1952c0da18c6d088f60cf758cd1d0eb5f0bbbfeea283740832b59381f85ad",
+      "size": 235841
+    },
+    {
+      "id": "13E-O86smDKgF4Gb5wzdoHCheoirK7BsS",
+      "name": "Небезпеки поруч із рукавичкою У соснах.docx",
+      "file": "Небезпеки поруч із рукавичкою У соснах.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "3fb8cac650c9fc6191b67ae3ea9affe6a70686ced621a94c76a086c3754fe6c8",
+      "size": 37320
+    },
+    {
+      "id": "1ibvyk-jNGZCmXiawB3K5B8LNWcVxgDzF",
+      "name": "Небезпеки хвойного лісу.txt",
+      "file": "Небезпеки хвойного лісу.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "1068815740de6cb990c62a8a81a124f3be53d2f354eae6921844a5182cef31be",
+      "size": 1273
+    },
+    {
+      "id": "1Pa6z1uLNKW9XThJvXJqp-NIhEQmduK0m",
+      "name": "Осінній путівник лісу.docx",
+      "file": "Осінній путівник лісу.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "f966df1ec2e7f68facb3f1586cf96be0444b5bec24ad69ed9f65b313a4946165",
+      "size": 37337
+    },
+    {
+      "id": "1MwI6U-zk7EaYiS9buISM_GNLiIqlnBFE",
+      "name": "Правила співжиття в рукавичці Біля бобрової греблі.pdf",
+      "file": "Правила співжиття в рукавичці Біля бобрової греблі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "96d40832981ead1ddcd41e6a0a764dff3f4ef56677efe91becd2cf61249e7372",
+      "size": 466699
+    },
+    {
+      "id": "1w0KOWYpFbicxvSlAB1jRx1d9HfY826xs",
+      "name": "Правила співжиття в рукавичці Біля мурашника.docx",
+      "file": "Правила співжиття в рукавичці Біля мурашника.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "15e4ca5344dd00a390ee64b7491bc41fb22979de641c5b70853664f73f4e77ed",
+      "size": 37304
+    },
+    {
+      "id": "1aFEGPL29qqp0ZY-X24CZPsnC82vKYhad",
+      "name": "Правила співжиття в рукавичці На узліссі.pdf",
+      "file": "Правила співжиття в рукавичці На узліссі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "446769bee0d78862aefa12eb16f7972536fcfdb4814cab9fe340718aaf065a43",
+      "size": 228460
+    },
+    {
+      "id": "124yhXotIC7IWNGwcdCUv7TiIeGeM8V1h",
+      "name": "Правила співжиття в рукавичці Під вербою.pdf",
+      "file": "Правила співжиття в рукавичці Під вербою.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "fdcc928350998bae00f5c909dfe532d94115e2a4e9fc645c3b67d121f5aa5de9",
+      "size": 231999
+    },
+    {
+      "id": "1rIdsXRbsrPT9A_Rp0Bxal46dHyJCurt9",
+      "name": "Правила співжиття в рукавичці Під дубом.txt",
+      "file": "Правила співжиття в рукавичці Під дубом.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "4c842ce4384d6d4fe6dfe07652ac28425467c0e061cd42d3a72fa5fbff6f4147",
+      "size": 1231
+    },
+    {
+      "id": "16kSe_xO5_xYr2kiym6t6EYQSi3eUEc6g",
+      "name": "Правила співжиття в рукавичці Під ялиною.docx",
+      "file": "Правила співжиття в рукавичці Під ялиною.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "48c418d785fd8b3f545979b58b47a9881e524293f9f0d77ca47b5862bf36bfb8",
+      "size": 37314
+    },
+    {
+      "id": "1OQbsw94BJCUCQQYYhtptxNhLEzmIcJ2o",
+      "name": "Правила співжиття в рукавичці У ліщині.docx",
+      "file": "Правила співжиття в рукавичці У ліщині.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "bc8a1fd4227db54be208fa57910d5499f7f4bfb60d6c91021d1566337191321e",
+      "size": 37276
+    },
+    {
+      "id": "1oR31857zjQ943VeiMTOs5vCPAwbT_Aw4",
+      "name": "Правила співжиття в рукавичці У соснах.pdf",
+      "file": "Правила співжиття в рукавичці У соснах.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "379cd5e49f99dedb384fc5ab45d265a4a8662757a236eacef8bcf08e980448f7",
+      "size": 455968
+    },
+    {
+      "id": "1phiIuCzeod_BtU9DCmHWbVabfu6nflkB",
+      "name": "Правила толоки.txt",
+      "file": "Правила толоки.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "fb914bcc1ada475ce1db475eaf7bc8a52220b9430ab605fb83d380675200e44e",
+      "size": 1270
+    },
+    {
+      "id": "1ONWES3rPqzHsQoszGpBw2H-eNstt8jaw",
+      "name": "Статут ОСМД Біля бобрової греблі.txt",
+      "file": "Статут ОСМД Біля бобрової греблі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "6e2d0d8e52d3f7086fb36bde6ade6016d5cf02957d253aa8af691f3c05c455d5",
+      "size": 1221
+    },
+    {
+      "id": "1ifG_bzlqDdt-QR_wsp9l-TBRX6EN7EK3",
+      "name": "Статут ОСМД Біля мурашника.pdf",
+      "file": "Статут ОСМД Біля мурашника.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "309ba2f2918d749600e7506b9c65fd172aa447516bd3c0ca3567a03edb2b2253",
+      "size": 462356
+    },
+    {
+      "id": "1Nr0VYWKWgTxr-HxIi5fvVM7u3VHhj7sJ",
+      "name": "Статут ОСМД На узліссі.pdf",
+      "file": "Статут ОСМД На узліссі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "8d6b355e317fe937f54e694c785b9a956f3b545ecbdbfa45208cbce60bb90213",
+      "size": 238327
+    },
+    {
+      "id": "1ooZCSRCTh-4CMAQLwIFCPZ2WgFJUSwk5",
+      "name": "Статут ОСМД Під вербою.docx",
+      "file": "Статут ОСМД Під вербою.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "fa98bc4051cd82a27e1b08a8a83f5a41c01fff41fcf2392c0c4723c16ffea3fc",
+      "size": 37314
+    },
+    {
+      "id": "1G_5uX7zDqP9BzsKa-aX0LexL6nXpKgvA",
+      "name": "Статут ОСМД Під дубом.txt",
+      "file": "Статут ОСМД Під дубом.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "6f895fcd4a47dc678aae48fdfca3e8b62840217c06457b492aff30797f2b3c6e",
+      "size": 1242
+    },
+    {
+      "id": "1hWQy3VmnxsIjNS5YodWyOmPSwrfvBdUz",
+      "name": "Статут ОСМД Під ялиною.docx",
+      "file": "Статут ОСМД Під ялиною.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "7392150aacbafcfe854be394e7d12e70861b6dda360bcdf05ceb244e34600aca",
+      "size": 37343
+    },
+    {
+      "id": "1I3nr1BsYf8qZC2jC9GgGN9SH8Kp_5VWZ",
+      "name": "Статут ОСМД У ліщині.docx",
+      "file": "Статут ОСМД У ліщині.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "0f9ec0772c384ce69870a1fdae5e4f6e42f9840fa0ef5bc197c4ad252f7e0550",
+      "size": 37322
+    },
+    {
+      "id": "1K6rqIttTni76EWhvkEa8LIhXVmJfqN32",
+      "name": "Статут ОСМД У соснах.pdf",
+      "file": "Статут ОСМД У соснах.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "c2d077b58ad0549c24a82e4e32266b2fbbdd5a04c735a4b49c3b03d50dd4c101",
+      "size": 460588
+    },
+    {
+      "id": "1B6fD5VURd_7ZekP7eHVhSO27hNzapflU",
+      "name": "Стежки до сусідів від рукавички Біля бобрової греблі.txt",
+      "file": "Стежки до сусідів від рукавички Біля бобрової греблі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "3f788d67e91821fad9f27592ddc6e66c678daa83153f9a745173c336a60dc5a6",
+      "size": 1093
+    },
+    {
+      "id": "1a8t-YZe9Vt6wFl47tccpNzbiIMspnaDP",
+      "name": "Стежки до сусідів від рукавички Біля мурашника.pdf",
+      "file": "Стежки до сусідів від рукавички Біля мурашника.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "e22fb3b74368b6daf6e706c5f3de5cdb8e7dfbc0de409017257fa232c91d05c6",
+      "size": 234302
+    },
+    {
+      "id": "1kNyfOmEYsS84oMtS6_RitJGekam-R7Pn",
+      "name": "Стежки до сусідів від рукавички На узліссі.docx",
+      "file": "Стежки до сусідів від рукавички На узліссі.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "d2201e2be3042e092185c0839611150d241e6af3ab285e2e848fcb6a89047311",
+      "size": 37247
+    },
+    {
+      "id": "17oNtdeeLy0LxRwhizLHFBvnmYml88y4D",
+      "name": "Стежки до сусідів від рукавички Під вербою.docx",
+      "file": "Стежки до сусідів від рукавички Під вербою.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "729bad6ee74a9bc40a5ae2ab50216c4abec0b8549382db22d9ca3f4cacc61f9b",
+      "size": 37232
+    },
+    {
+      "id": "1t63P_lPDiQvnxyqIngjqQ1_Q-ELDnor4",
+      "name": "Стежки до сусідів від рукавички Під дубом.txt",
+      "file": "Стежки до сусідів від рукавички Під дубом.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "efead49524c2fdb439a549cfb02b751523dc59df84e6eafe9c1529e4dfe29e9e",
+      "size": 1234
+    },
+    {
+      "id": "1IOtfq7RpZmaKsIBwbi9JaxFh9tbuC1I4",
+      "name": "Стежки до сусідів від рукавички Під ялиною.pdf",
+      "file": "Стежки до сусідів від рукавички Під ялиною.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "9900915c1d837b6ea19ca1439b1314618ef206d452f3ec7fe0e1e9a47603a348",
+      "size": 235391
+    },
+    {
+      "id": "1OUmbSZEMFOU8BIJUHxXn9dRxfJ6klfi_",
+      "name": "Стежки до сусідів від рукавички У ліщині.pdf",
+      "file": "Стежки до сусідів від рукавички У ліщині.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "4a2dc3ca44225934f5e617c4b78c798a36f61a032139839db128da3fa16e1e8d",
+      "size": 235299
+    },
+    {
+      "id": "1iGY3YoS1dpVh30IPGk9w60yXjD3ABHrU",
+      "name": "Стежки до сусідів від рукавички У соснах.pdf",
+      "file": "Стежки до сусідів від рукавички У соснах.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "b4aa13dfd1544271af7b766d0d01dfc07b6cb225fda5ffe739aa48bfa7b7f154",
+      "size": 233419
+    },
+    {
+      "id": "1elohxWv8jS1jZrGTtWcDzBFbX-ex_gVY",
+      "name": "Чергування в рукавичці Біля бобрової греблі.pdf",
+      "file": "Чергування в рукавичці Біля бобрової греблі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "f15e08db1f86ccdebe618171db225a904aa715313884d58c3fd2b71874528ee0",
+      "size": 465436
+    },
+    {
+      "id": "1T0kMaiUlyCKE1vGFFNdMQlg_3qNdfMc9",
+      "name": "Чергування в рукавичці Біля мурашника.pdf",
+      "file": "Чергування в рукавичці Біля мурашника.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "9f633b7110808f5c7143d279ab0de35938e0b6165b2ae1cb134e8c4a369f1b8c",
+      "size": 234162
+    },
+    {
+      "id": "1eXQiCcTypTC8gGRU-WmFaDBZ0UX3EUp4",
+      "name": "Чергування в рукавичці На узліссі.docx",
+      "file": "Чергування в рукавичці На узліссі.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "8062bf5b80e523b1e669860ea767bda07b63a724dc84e843a05cd7c2232b8741",
+      "size": 37260
+    },
+    {
+      "id": "1XUAfg3lDwHMSvmz3jpEDZ5n7ehYSfqNG",
+      "name": "Чергування в рукавичці Під вербою.docx",
+      "file": "Чергування в рукавичці Під вербою.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "0de898d308d16203d15b4dc46134ba17d2404edd9dc3cf13c5200912f4229814",
+      "size": 37274
+    },
+    {
+      "id": "1hyKkAyTVl6pzizmu9gLkdB-LScjQ0j3W",
+      "name": "Чергування в рукавичці Під дубом.pdf",
+      "file": "Чергування в рукавичці Під дубом.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "cbdb2b8d9eb5694078f39fe3ed91563fa00fd786885ec94d9b12c113fdc0d6c6",
+      "size": 233885
+    },
+    {
+      "id": "1Dgr-tUq5vwHt2KDa_On9yC7oepsEc0LA",
+      "name": "Чергування в рукавичці Під ялиною.docx",
+      "file": "Чергування в рукавичці Під ялиною.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "0d778ec279f178e2159385fdb89daf70da5e329d911fa1f43b7f73073de7a81e",
+      "size": 37315
+    },
+    {
+      "id": "14O7nXUIAud6_qyjNfyZyMC0EYHPrpNgK",
+      "name": "Чергування в рукавичці У ліщині.pdf",
+      "file": "Чергування в рукавичці У ліщині.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "dc1e6c99d966b82648aa75233c75ddacfaf68306f958e0bab27515799d529d8a",
+      "size": 232679
+    },
+    {
+      "id": "1hfKkNZ0noLV5yEDWaXMvx4BSlr5mTsEy",
+      "name": "Чергування в рукавичці У соснах.pdf",
+      "file": "Чергування в рукавичці У соснах.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "b712ff85d6392b0a60e9d5a22266228fdc18e4b264d123229bec7c1cfb62c180",
+      "size": 466193
+    },
+    {
+      "id": "1q55RDh24KWX4QnMH1_aXcif_AXnUWllk",
+      "name": "Чим поживитись поруч із рукавичкою Біля бобрової греблі.txt",
+      "file": "Чим поживитись поруч із рукавичкою Біля бобрової греблі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "8cb7bd77174e093e4d01238fa3c3415589a74026e61e120ca59669d16461a639",
+      "size": 1124
+    },
+    {
+      "id": "1ViZ9a7aoZmMGv86yhvcyAi-wod0XuZRW",
+      "name": "Чим поживитись поруч із рукавичкою Біля мурашника.docx",
+      "file": "Чим поживитись поруч із рукавичкою Біля мурашника.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "5154b511133168d8a64a51fbf24824e8337869f50b176cee53100e516522e716",
+      "size": 37278
+    },
+    {
+      "id": "1EvlaYYRtyhc7vya0xd5KilNFXH_8bpid",
+      "name": "Чим поживитись поруч із рукавичкою На узліссі.txt",
+      "file": "Чим поживитись поруч із рукавичкою На узліссі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "ce5df297983a4bb262898004513c3a1b4ed6d9f4ff115c1aa6fc30d4d19b7f41",
+      "size": 1093
+    },
+    {
+      "id": "13yXMpxyis833JeaQZV8bvofCOsYFFAu-",
+      "name": "Чим поживитись поруч із рукавичкою Під вербою.txt",
+      "file": "Чим поживитись поруч із рукавичкою Під вербою.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "5f62e04ec7fe76afc3c3e10cb8fa46858fe7c4245226f61e4b8d50c082cbd356",
+      "size": 1077
+    },
+    {
+      "id": "13eemEHzUg0TEUUFXZQ3HNICuZJmoKT7W",
+      "name": "Чим поживитись поруч із рукавичкою Під дубом.pdf",
+      "file": "Чим поживитись поруч із рукавичкою Під дубом.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "f2b9dd48a23ab0eb0c08d5af33c4ec3b11ae2b38350a3e3ff9406380a71350db",
+      "size": 462966
+    },
+    {
+      "id": "1sWUwp-WqIjD4lswMhuZ6Vva4MC55jOqp",
+      "name": "Чим поживитись поруч із рукавичкою Під ялиною.pdf",
+      "file": "Чим поживитись поруч із рукавичкою Під ялиною.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "ede1eb0bf4c13ab5cbcd572d2354c4e2262ce0779e4c162fd51d6e0f397feed5",
+      "size": 465903
+    },
+    {
+      "id": "13DLqQyjYek6obP0rb1go6B7HvKWqBPfw",
+      "name": "Чим поживитись поруч із рукавичкою У ліщині.docx",
+      "file": "Чим поживитись поруч із рукавичкою У ліщині.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "eceec8c0258ee0bbd8d6032a08c6c29e14d449177aa642b54890724e27612bef",
+      "size": 37273
+    },
+    {
+      "id": "16FWQ0gEdBhohIEgLm01Eo4Pv5b8UGbN6",
+      "name": "Чим поживитись поруч із рукавичкою У соснах.docx",
+      "file": "Чим поживитись поруч із рукавичкою У соснах.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "18cc49d3aa8d39d17b45cfeb488ab8aa66540f0db9b575a07fdf7036c6e2cc55",
+      "size": 37258
+    },
+    {
+      "id": "1b2-YzdaGQEw6YvfDF1vASgsO1dQoihBY",
+      "name": "Членські внески рукавички Біля бобрової греблі.pdf",
+      "file": "Членські внески рукавички Біля бобрової греблі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "2ceafc5edf93fb9d880e8c58797de4ae7483158c573d3aadff8037cbc7a9e673",
+      "size": 239200
+    },
+    {
+      "id": "1oTrnWZAh2MpKePFd6FAaqGcdp78otSdb",
+      "name": "Членські внески рукавички Біля мурашника.pdf",
+      "file": "Членські внески рукавички Біля мурашника.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "830b86d6f105b8192f7aba8a847d8b809734ac0b54eb7650b0b2c1a92993ec89",
+      "size": 467491
+    },
+    {
+      "id": "1ueDjEjUuPrI95Zy2PBCgrYVBKDuM6zE-",
+      "name": "Членські внески рукавички На узліссі.docx",
+      "file": "Членські внески рукавички На узліссі.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "308c61d173730afd22546e2d8f8afd2a920410b8edaf99eba5b1f720d9013e80",
+      "size": 37316
+    },
+    {
+      "id": "1dJov0RCEHIKnQdL6BxIk4gTaaBOXH9jg",
+      "name": "Членські внески рукавички Під вербою.pdf",
+      "file": "Членські внески рукавички Під вербою.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "cfbcf3b3754a371292629aa33ab68e0a2288cf9caecfa55e7ee9a794f13e6d93",
+      "size": 454799
+    },
+    {
+      "id": "19vWg4CC_09MGn6ZXK1tw7KnuRaSAAi1L",
+      "name": "Членські внески рукавички Під дубом.txt",
+      "file": "Членські внески рукавички Під дубом.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "79b18c098bd745b814d85bc23401a2dde48deb5e4f546e396e0488a056fe2f35",
+      "size": 1250
+    },
+    {
+      "id": "1Y21Ao0AZJBLV5CFErd-jkI9Ajt87YosB",
+      "name": "Членські внески рукавички Під ялиною.pdf",
+      "file": "Членські внески рукавички Під ялиною.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "c2b73fcd748f93b8704828813448050b7927015c4332e0a62463cbdf007a00ee",
+      "size": 246563
+    },
+    {
+      "id": "1Cw38s0_xLdD7U-JOxgvj3KdxdM__ruvm",
+      "name": "Членські внески рукавички У ліщині.pdf",
+      "file": "Членські внески рукавички У ліщині.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "80c62c63012da8146e56391480ace44bb55e69799c07a376f35df2a371c0113a",
+      "size": 239528
+    },
+    {
+      "id": "1lX4rAxlkkcHq8aGbDgSPz_3Z6gzi7yAJ",
+      "name": "Членські внески рукавички У соснах.pdf",
+      "file": "Членські внески рукавички У соснах.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "043438f867f6799211feeb826b8a238626732d99fd98f77c27fb9835b9764e9f",
+      "size": 233486
+    },
+    {
+      "id": "1smNSUKL7x3NW1FprgBbPI8M-U7_9d8h9",
+      "name": "Що робити при пожежі.txt",
+      "file": "Що робити при пожежі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "5f571d07af58221b15a9dd54bb05c06c4435cbba3596ead484b270d8a7aa4774",
+      "size": 1350
+    },
+    {
+      "id": "1SgBOgF4tW6-ChbRQlPl1qs1zXHcrJCFC",
+      "name": "Що їсти біля річки.txt",
+      "file": "Що їсти біля річки.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "0e24693fbbf0a1c975eee7f9e1f9f318a4bdda6a278fc10c9bd55be261fa936a",
+      "size": 1158
+    },
+    {
+      "id": "1NtqYohJt3EtPDQsxycHuPNle4ZkTkvWC",
+      "name": "Що їсти в листяному лісі.pdf",
+      "file": "Що їсти в листяному лісі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "abbebca52fc40769bc9f120bf2746a49b91e33128e38b98e48e56a7dfa1d05ef",
+      "size": 465376
+    },
+    {
+      "id": "1uGqQvlCYL06QACaKNOCr2Ui9K_OqtNwv",
+      "name": "Що їсти в хвойному лісі.txt",
+      "file": "Що їсти в хвойному лісі.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "a5bc96540fb4046e2ca24b723625072a901154a061ca594051dd0e635241a00e",
+      "size": 1236
+    },
+    {
+      "id": "1vFzDLNctwJw-9oP0hKdnKBFOgajnIJPq",
+      "name": "Як кричати, коли бачиш мисливців.pdf",
+      "file": "Як кричати, коли бачиш мисливців.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "c8c130dc0ace807dd40d47581ff1004f84ed82e15fdf9cc13e10945546c5bb98",
+      "size": 465911
+    },
+    {
+      "id": "1IkpzVjxhsrcM77Q7rbTp2VQEz42XROOH",
+      "name": "Як не заблукати серед однакових сосен.txt",
+      "file": "Як не заблукати серед однакових сосен.txt",
+      "modified": "Oct 13",
+      "mime": "text/plain",
+      "sha256": "7f4a9db6cd5a1b0a45d7bd275e9027f36ae2063722958eaf906f766edb27b881",
+      "size": 1266
+    },
+    {
+      "id": "1AvbME1p9BJifABci_MwEzXfuvZbEhU13",
+      "name": "Як утеплити рукавичку біля річки.pdf",
+      "file": "Як утеплити рукавичку біля річки.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "b905cecf21f95495a72ff8003a379509e9f0306f18bdae0524305813d050cc0c",
+      "size": 232407
+    },
+    {
+      "id": "19Oz-0xjPVF3myx1lvtACjzvKYogK-IMR",
+      "name": "Як утеплити рукавичку в листяному лісі.docx",
+      "file": "Як утеплити рукавичку в листяному лісі.docx",
+      "modified": "Oct 13",
+      "mime": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "sha256": "935ea8786d815b6e4d7a9bc59f4e8c8d47d67f13d160cf0cf0cf75e844794d34",
+      "size": 37224
+    },
+    {
+      "id": "12-DqscskWEM5h2UmIbMCzyTKx3iwwLAl",
+      "name": "Як утеплити рукавичку в хвойному лісі.pdf",
+      "file": "Як утеплити рукавичку в хвойному лісі.pdf",
+      "modified": "Oct 13",
+      "mime": "application/pdf",
+      "sha256": "54081476db0f3ae7282e82a9cae2bae8c788d3ea66a832090e7d99081d08d4e0",
+      "size": 467649
+    }
+  ]
+}
