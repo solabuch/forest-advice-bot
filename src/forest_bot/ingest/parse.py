@@ -9,6 +9,7 @@
 
 import io
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -18,6 +19,7 @@ import zipfile
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePath
+from typing import Any
 from xml.etree.ElementTree import Element
 
 import numpy as np
@@ -76,6 +78,24 @@ class ParsedDocument:
     @property
     def text(self) -> str:
         return "\n\n".join(block.text for block in self.blocks)
+
+    def to_json(self) -> dict[str, Any]:
+        """Для чернетки завантаження: щоб після відповіді звіра не розбирати файл удруге."""
+        return {
+            "title": self.title,
+            "ocr_pages": self.ocr_pages,
+            "pages": self.pages,
+            "blocks": [[b.text, b.section, b.page, b.heading] for b in self.blocks],
+        }
+
+    @classmethod
+    def from_json(cls, data: dict[str, Any]) -> "ParsedDocument":
+        return cls(
+            blocks=tuple(Block(*item) for item in data["blocks"]),
+            title=data.get("title"),
+            ocr_pages=int(data.get("ocr_pages", 0)),
+            pages=data.get("pages"),
+        )
 
 
 def parse(data: bytes, file_name: str) -> ParsedDocument:
@@ -170,18 +190,21 @@ def _pdf_lines(page: pdfium.PdfPage) -> list[_PdfLine]:
     textpage = page.get_textpage()
     lines = []
     position = 0
-    for text in textpage.get_text_range().split("\r\n"):
-        if text.strip():
-            last = position + len(text) - 1
-            lines.append(
-                _PdfLine(
-                    text=text.strip(),
-                    size=round(pdfium.raw.FPDFText_GetFontSize(textpage.raw, position), 1),
-                    weight=pdfium.raw.FPDFText_GetFontWeight(textpage.raw, position),
-                    right=textpage.get_charbox(last)[2],
+    try:
+        for text in textpage.get_text_range().split("\r\n"):
+            if text.strip():
+                last = position + len(text) - 1
+                lines.append(
+                    _PdfLine(
+                        text=text.strip(),
+                        size=round(pdfium.raw.FPDFText_GetFontSize(textpage.raw, position), 1),
+                        weight=pdfium.raw.FPDFText_GetFontWeight(textpage.raw, position),
+                        right=textpage.get_charbox(last)[2],
+                    )
                 )
-            )
-        position += len(text) + 2
+            position += len(text) + 2
+    finally:
+        textpage.close()
     return lines
 
 
@@ -286,16 +309,22 @@ def parse_pdf(data: bytes) -> ParsedDocument:
         except pdfium.PdfiumError:
             raise ParseError("PDF пошкоджений або захищений паролем") from None
         try:
-            for page in pdf:
-                lines = _pdf_lines(page)
-                if sum(len(line.text) for line in lines) >= MIN_PAGE_CHARS:
-                    pages.append(lines)
-                elif sum(isinstance(p, np.ndarray) for p in pages) >= OCR_MAX_PAGES:
-                    raise ParseError(
-                        f"Сканів понад {OCR_MAX_PAGES} сторінок не читаю — розділи документ"
-                    )
-                else:
-                    pages.append(_render(page))
+            # Усе з pdfium — закрити тут, під замком: інакше об'єкти звільняє збирач
+            # сміття в довільному потоці, поки інший працює з pdfium
+            for index in range(len(pdf)):
+                page = pdf[index]
+                try:
+                    lines = _pdf_lines(page)
+                    if sum(len(line.text) for line in lines) >= MIN_PAGE_CHARS:
+                        pages.append(lines)
+                    elif sum(isinstance(p, np.ndarray) for p in pages) >= OCR_MAX_PAGES:
+                        raise ParseError(
+                            f"Сканів понад {OCR_MAX_PAGES} сторінок не читаю — розділи документ"
+                        )
+                    else:
+                        pages.append(_render(page))
+                finally:
+                    page.close()
         finally:
             pdf.close()
 
@@ -335,7 +364,11 @@ def _scan_dpi(page: pdfium.PdfPage) -> float:
 
 def _render(page: pdfium.PdfPage) -> np.ndarray:
     bitmap = page.render(scale=_scan_dpi(page) / 72, grayscale=True)
-    pixels: np.ndarray = bitmap.to_numpy()
+    try:
+        # to_numpy — вид на пам'ять pdfium; копія живе й після закриття bitmap
+        pixels: np.ndarray = bitmap.to_numpy().copy()
+    finally:
+        bitmap.close()
     return pixels.reshape(pixels.shape[0], pixels.shape[1])
 
 
@@ -355,6 +388,9 @@ def ocr(pixels: np.ndarray) -> str:
             capture_output=True,
             timeout=OCR_TIMEOUT,
             check=False,
+            # Один потік на процес: два tesseract з OpenMP на всі ядра заважають один
+            # одному так, що скан, який сам читається за 5 с, не вкладався у 120 с
+            env={**os.environ, "OMP_THREAD_LIMIT": "1"},
         )
     except subprocess.TimeoutExpired:
         raise ParseError("Скан розпізнається задовго — спробуй файл із текстом") from None
