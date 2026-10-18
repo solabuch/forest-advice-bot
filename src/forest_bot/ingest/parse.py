@@ -50,6 +50,9 @@ TITLE_MAX_OCR = 100
 # pdfium не потокобезпечний: два документи одночасно — через замок
 _PDFIUM = threading.Lock()
 _SENTENCE_END = tuple(".!?…:;,")
+# Кінець речення всередині рядка («…«У соснах»! Взимку…») — це шматок абзацу, а не заголовок.
+# «Розділ 1. Положення» не зачіпає: перед крапкою має бути слово чи лапки
+_INNER_SENTENCE_END = re.compile(r"(?:\w{3}|[»\")])[.!?…]\s")
 _BULLET = re.compile(r"^\s*(?:[-–—•*·]|\d+[.)])\s+")
 # Стилі заголовків Word і ODF, зокрема локалізовані: «Заголовок 1», «Назва»
 _HEADING_STYLE = re.compile(r"^(heading|title|заголовок|назва)", re.IGNORECASE)
@@ -123,6 +126,7 @@ def _is_heading(line: str) -> bool:
         and not line.endswith(_SENTENCE_END)
         and line[0].isupper()
         and not _BULLET.match(line)
+        and not _INNER_SENTENCE_END.search(line)
     )
 
 
@@ -156,10 +160,21 @@ def blocks_from_lines(
 
     def flush() -> None:
         nonlocal section
+        previous = blocks[-1] if blocks else None
         if len(group) == 1 and _is_heading(group[0]):
             section = group[0].strip()
             blocks.append(Block(section, section, page, heading=True))
-        elif text := _join(group):
+        elif not (text := _join(group)):
+            pass
+        elif (
+            previous
+            and not previous.heading
+            and text[0].islower()
+            and not previous.text.endswith(tuple(".!?…"))
+        ):
+            # Абзац, розірваний порожнім рядком (так буває в OCR): «…і всім хочеться» + «виспатися.»
+            blocks[-1] = replace(previous, text=f"{previous.text} {text}")
+        else:
             blocks.append(Block(text, section, page))
         group.clear()
 
@@ -404,9 +419,32 @@ def _cyrillic(text: str) -> int:
     return sum("Ѐ" <= ch <= "ӿ" for ch in text)
 
 
+# Латинські літери, які tesseract (ukr+eng) плутає з кириличними: «У cocHax» замість «У соснах»
+_LATIN_TWINS = "aceiopxyABCEHIKMOPTXY"
+_LOOKALIKES = str.maketrans(_LATIN_TWINS, "асеіорхуАВСЕНІКМОРТХУ")
+_WORD = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)*")
+# Коротке латинське слово — частіше крихта від плями («oe», «ij»); кирилицею робимо лише ці
+_SHORT_WORDS = {"а", "і", "у", "о", "на", "не", "то"}
+
+
+def _to_cyrillic(word: str) -> str:
+    """Слово з латинськими двійниками → кирилиця; інше латинське слово («OCR», «Wi-Fi») — як є."""
+    latin = {ch for ch in word if ch.isascii()}
+    if not latin or not latin <= set(_LATIN_TWINS):
+        return word
+    fixed = word.translate(_LOOKALIKES)
+    if not _cyrillic(word) and len(word) < 3 and fixed.lower() not in _SHORT_WORDS:
+        return word
+    # «сосНах» — велика «Н» посеред малих: OCR сплутав н і H
+    if not fixed[1:].isupper():
+        fixed = fixed[0] + fixed[1:].lower()
+    return fixed
+
+
 def _clean_ocr(text: str) -> str:
     """Рядки-сміття від плям і рамок: майже без літер, а на кириличній сторінці —
-    ще й короткі рядки без жодної кириличної літери («ij», «magi wees»)."""
+    ще й короткі рядки без жодної кириличної літери («ij», «magi wees»).
+    На кириличній сторінці латинські двійники в словах замінюються кириличними."""
     cyrillic_page = _cyrillic(text) > sum(ch.isalpha() for ch in text) / 2
     lines = []
     for line in text.splitlines():
@@ -416,6 +454,8 @@ def _clean_ocr(text: str) -> str:
             continue
         if cyrillic_page and stripped and not _cyrillic(stripped) and len(stripped.split()) < 3:
             continue
+        if cyrillic_page:
+            line = _WORD.sub(lambda match: _to_cyrillic(match.group()), line)
         lines.append(line)
     return "\n".join(lines)
 
@@ -679,7 +719,10 @@ def parse_doc(data: bytes) -> ParsedDocument:
     if result.returncode != 0:
         logger.warning("antiword: %s", result.stderr.decode(errors="replace")[:300])
         raise ParseError("Не вдалося прочитати .doc — збережи його як .docx і надішли ще раз")
-    blocks, _ = blocks_from_lines(result.stdout.decode("utf-8", errors="replace").splitlines())
+    # З -w 0 antiword не переносить рядків: абзац — один рядок, а між назвою й першим
+    # абзацом порожнього рядка немає. Тож, як у RTF, кожен рядок — окремий абзац
+    text = result.stdout.decode("utf-8", errors="replace")
+    blocks, _ = blocks_from_lines(line for raw in text.splitlines() for line in (raw, ""))
     return _document(blocks)
 
 

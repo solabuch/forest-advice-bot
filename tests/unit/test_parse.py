@@ -86,6 +86,18 @@ def test_wrapped_line_is_joined() -> None:
     assert document.blocks[0].text == "Гриби шукайте після дощу, коли земля волога."
 
 
+def test_paragraph_split_by_blank_line_is_joined() -> None:
+    # Так tesseract іноді рве абзац: рядок із кінцем речення всередині — не заголовок,
+    # а рядок із малої літери — продовження попереднього абзацу
+    text = "Тиша\n\nШановні мешканці! Взимку ночі довгі, і всім хочеться\n\nвиспатися.\n"
+    document = parse(text.encode(), "x.txt")
+    assert headings(document) == ["Тиша"]
+    assert document.blocks[1].text == (
+        "Шановні мешканці! Взимку ночі довгі, і всім хочеться виспатися."
+    )
+    assert document.blocks[1].section == "Тиша"
+
+
 # --- Word і OpenDocument ---
 
 
@@ -107,6 +119,7 @@ def test_docx_sections_and_bullets() -> None:
 def test_doc_via_antiword() -> None:
     require("antiword")
     document = fixture("statut.doc")
+    assert headings(document) == STATUT_HEADINGS
     assert document.title == STATUT_HEADINGS[0]
     assert "Скарбник ОСМД — Жабка." in document.text
 
@@ -166,6 +179,29 @@ def test_whole_archive_parses() -> None:
 def test_ocr_noise_lines_are_dropped() -> None:
     noisy = "Заміна шишок\n~~ -- _ —\n|\nmagi wees\nЗайчик може платити морквою."
     assert parse_module._clean_ocr(noisy) == "Заміна шишок\nЗайчик може платити морквою."
+
+
+@pytest.mark.parametrize(
+    ("raw", "clean"),
+    [
+        # Слово цілком із латинських двійників і «H» замість «н»
+        ("Шановні мешканці рукавички «У cocHax»!", "Шановні мешканці рукавички «У соснах»!"),
+        # Окремі латинські літери в кириличному слові
+        ("Мешканці рукавичкa «Пiд дубом»", "Мешканці рукавичка «Під дубом»"),
+        ("ОСМД «Ha узліссі»", "ОСМД «На узліссі»"),
+        # Коротке слово — лише якщо стає справжнім словом; «oe» — крихта від плями
+        ("He ходіть oe до річки", "Не ходіть oe до річки"),
+        # Справжні латинські слова лишаються: є літери без кириличних двійників
+        ("Мешканці рукавички мають Wi-Fi та OCR", "Мешканці рукавички мають Wi-Fi та OCR"),
+    ],
+)
+def test_ocr_latin_lookalikes(raw: str, clean: str) -> None:
+    assert parse_module._clean_ocr(raw) == clean
+
+
+def test_latin_page_is_not_converted() -> None:
+    text = "Mushroom picking in the coniferous forest"
+    assert parse_module._clean_ocr(text) == text
 
 
 # --- Погані файли ---
