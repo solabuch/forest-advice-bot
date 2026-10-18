@@ -14,6 +14,7 @@ from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError
 
 from forest_bot import db
 from forest_bot.config import Settings
+from forest_bot.places import PlaceKind, PlacesError, load_places
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +54,15 @@ async def check_migrations(settings: Settings) -> CheckResult:
         detail = f"БД на ревізії {current or '—'}, потрібна {head} — запусти migrate"
         return CheckResult("Міграції", False, detail)
     return CheckResult("Міграції", True, f"ревізія {head}")
+
+
+async def check_places(settings: Settings) -> CheckResult:
+    try:
+        graph = load_places(settings.places_file)
+    except PlacesError as error:
+        return CheckResult("Місця", False, str(error))
+    counts = [len(graph.of_kind(kind)) for kind in PlaceKind]
+    return CheckResult("Місця", True, "ліс: {}, частин: {}, рукавичок: {}".format(*counts))
 
 
 async def _tesseract_langs(binary: str) -> set[str]:
@@ -150,6 +160,7 @@ async def run_checks(
     # Без БД міграції не перевіряємо — інакше та сама помилка двічі
     if database and (await run(check_database(settings))).ok:
         await run(check_migrations(settings))
+    await run(check_places(settings))
     await run(check_tesseract())
     await run(check_antiword())
     if not offline:

@@ -73,6 +73,8 @@ class Settings(DatabaseSettings):
     uploads_per_hour: int = Field(default=20, ge=1)
     invite_code: SecretStr | None = None
     groq_models: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    # Свій файл місць замість вбудованого (D-21); None — forest_bot/data/places.yaml
+    places_file: Path | None = None
 
     @field_validator("telegram_bot_token", "groq_api_key", mode="before")
     @classmethod
@@ -105,9 +107,9 @@ class Settings(DatabaseSettings):
             raise ValueError("невідомий часовий пояс, приклад — Europe/Kyiv") from None
         return value
 
-    @field_validator("invite_code", mode="before")
+    @field_validator("invite_code", "places_file", mode="before")
     @classmethod
-    def _empty_invite_is_none(cls, value: object) -> object:
+    def _empty_is_none(cls, value: object) -> object:
         return None if isinstance(value, str) and not value.strip() else value
 
     @field_validator("groq_models", mode="before")
