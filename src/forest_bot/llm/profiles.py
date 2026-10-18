@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 # Порядок — за міні-бенчмарком українською (scripts/bench_llm.py)
-DEFAULT_CHAIN = ("openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b")
+DEFAULT_CHAIN = ("qwen/qwen3.8-27b", "openai/gpt-oss-120b", "openai/gpt-oss-20b")
 
 
 @dataclass(frozen=True)
@@ -32,7 +32,9 @@ _GPT_OSS = ModelProfile(
 PROFILES: Mapping[str, ModelProfile] = {
     "openai/gpt-oss-120b": _GPT_OSS,
     "openai/gpt-oss-20b": _GPT_OSS,
-    "qwen/qwen3.8-27b": ModelProfile(strict_json=True, params={"reasoning_effort": "none"}),
+    # strict json_schema у qwen на Groq зривається (400 json_validate_failed, генерація
+    # починається з «{thought»); json_object + валідація pydantic стабільні (18.10)
+    "qwen/qwen3.8-27b": ModelProfile(params={"reasoning_effort": "none"}),
 }
 
 
