@@ -1,0 +1,6 @@
+# Для розробки: БД доступна з хоста на 127.0.0.1:5432 (тести, alembic)
+# uv run poe db  →  docker compose -f compose.yaml -f compose.dev.yaml up -d db
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"

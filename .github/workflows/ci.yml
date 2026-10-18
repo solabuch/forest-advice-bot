@@ -91,3 +91,38 @@ jobs:
       - run: uv sync --locked
       # Власний пакет не на PyPI — пропускаємо, решту перевіряємо на відомі CVE
       - run: uv run pip-audit --skip-editable
+
+  docker:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          # Той самий тег, що в compose.yaml: compose візьме цей образ, а не збиратиме вдруге
+          tags: ghcr.io/${{ github.repository }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      # Повний шлях compose: db → migrate (без токенів) → самоперевірка в контейнері
+      - name: Self-check inside the container
+        env:
+          FAKE_TOKEN: "123456789:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          FAKE_KEY: "gsk_xxxxxxxxxxxxxxxxxxxxxxxx"
+        run: |
+          docker compose run --rm \
+            -e TELEGRAM_BOT_TOKEN="$FAKE_TOKEN" -e GROQ_API_KEY="$FAKE_KEY" \
+            app check --offline --strict
+      - name: Config errors are explained, not crashed
+        run: |
+          set +e
+          out=$(docker compose run --rm app check 2>&1); code=$?
+          echo "$out"
+          test "$code" -eq 2 && echo "$out" | grep -q "Не задано TELEGRAM_BOT_TOKEN" && ! echo "$out" | grep -q Traceback
+      - name: Image size
+        run: |
+          size=$(docker image inspect ghcr.io/${{ github.repository }}:latest --format '{{.Size}}')
+          echo "Образ: $((size / 1024 / 1024)) МБ (без стиснення)" >> "$GITHUB_STEP_SUMMARY"
+      - if: always()
+        run: docker compose down -v

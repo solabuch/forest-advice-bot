@@ -5,7 +5,7 @@
 
 import re
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, SecretStr, ValidationError, field_validator
@@ -31,18 +31,40 @@ class ConfigError(Exception):
         self.problems = problems
 
 
-class Settings(BaseSettings):
-    """Усі налаштування; обов'язкові лише два токени."""
+class DatabaseSettings(BaseSettings):
+    """БД і логи — усе, що потрібно міграціям; токени бота їм не потрібні."""
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore", frozen=True
     )
 
-    telegram_bot_token: SecretStr
-    groq_api_key: SecretStr
     database_url: str = "postgresql+asyncpg://forest:forest@db:5432/forest"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["text", "json"] = "text"
+
+    @field_validator("database_url")
+    @classmethod
+    def _async_driver(cls, value: str) -> str:
+        # Звичний postgresql://… → драйвер asyncpg для SQLAlchemy
+        if not value.startswith(("postgresql://", "postgresql+asyncpg://")):
+            raise ValueError("очікується postgresql://… або postgresql+asyncpg://…")
+        return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+    @property
+    def asyncpg_dsn(self) -> str:
+        """DSN для asyncpg: без драйвера SQLAlchemy у схемі."""
+        return re.sub(r"^postgresql\+\w+://", "postgresql://", self.database_url)
+
+    def secret_values(self) -> list[str]:
+        """Значення, які треба маскувати в логах."""
+        return []
+
+
+class Settings(DatabaseSettings):
+    """Усі налаштування застосунку; обов'язкові лише два токени."""
+
+    telegram_bot_token: SecretStr
+    groq_api_key: SecretStr
     bot_timezone: str = "Europe/Kyiv"
     role: Literal["all", "bot", "worker"] = "all"
     archive_folder_id: str = DEFAULT_ARCHIVE_FOLDER_ID
@@ -100,11 +122,6 @@ class Settings(BaseSettings):
     def timezone(self) -> ZoneInfo:
         return ZoneInfo(self.bot_timezone)
 
-    @property
-    def asyncpg_dsn(self) -> str:
-        """DSN для asyncpg: без драйвера SQLAlchemy у схемі."""
-        return re.sub(r"^postgresql\+\w+://", "postgresql://", self.database_url)
-
     def secret_values(self) -> list[str]:
         """Значення, які треба маскувати в логах."""
         secrets = [self.telegram_bot_token, self.groq_api_key, self.invite_code]
@@ -125,9 +142,21 @@ def describe_errors(error: ValidationError) -> list[str]:
     return problems
 
 
-def load_settings(env_file: Path | None = Path(".env")) -> Settings:
-    """Читає конфіг; невалідний → ConfigError зі зрозумілими реченнями."""
+SettingsT = TypeVar("SettingsT", bound=DatabaseSettings)
+
+
+def _load[SettingsT: DatabaseSettings](model: type[SettingsT], env_file: Path | None) -> SettingsT:
     try:
-        return Settings(_env_file=env_file)
+        return model(_env_file=env_file)
     except ValidationError as error:
         raise ConfigError(describe_errors(error)) from None
+
+
+def load_settings(env_file: Path | None = Path(".env")) -> Settings:
+    """Повний конфіг; невалідний → ConfigError зі зрозумілими реченнями."""
+    return _load(Settings, env_file)
+
+
+def load_database_settings(env_file: Path | None = Path(".env")) -> DatabaseSettings:
+    """Лише БД і логи — для міграцій."""
+    return _load(DatabaseSettings, env_file)
