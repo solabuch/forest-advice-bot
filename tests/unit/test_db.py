@@ -1,5 +1,7 @@
 """Міграції: конфіг alembic і ланцюжок ревізій без БД."""
 
+from alembic.script import ScriptDirectory
+
 from forest_bot import db
 from tests.factories import make_settings
 
@@ -14,4 +16,6 @@ def test_alembic_config_escapes_percent() -> None:
 
 
 def test_single_head() -> None:
-    assert db.head_revision(make_settings()) == "0001"
+    # Дві гілки міграцій (два head) зламали б `upgrade head` у рев'юера
+    script = ScriptDirectory.from_config(db.alembic_config(make_settings()))
+    assert len(script.get_heads()) == 1
