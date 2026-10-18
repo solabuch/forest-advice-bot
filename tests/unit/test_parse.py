@@ -164,7 +164,7 @@ def test_whole_archive_parses() -> None:
 
 
 def test_ocr_noise_lines_are_dropped() -> None:
-    noisy = "Заміна шишок\n~~ -- _ —\n|\nЗайчик може платити морквою."
+    noisy = "Заміна шишок\n~~ -- _ —\n|\nmagi wees\nЗайчик може платити морквою."
     assert parse_module._clean_ocr(noisy) == "Заміна шишок\nЗайчик може платити морквою."
 
 
@@ -216,3 +216,38 @@ def test_missing_antiword_is_explained(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(shutil, "which", lambda _: None)
     with pytest.raises(ParseError, match="antiword"):
         fixture("statut.doc")
+
+
+# --- Назва скану: лише чисто розпізнана, інакше — назва файлу (D-17) ---
+
+
+@pytest.mark.parametrize(
+    ("raw", "title"),
+    [
+        # Справжній вивід tesseract для сканів архіву (18.10)
+        (
+            "ij\n\noe Правила співжиття в рукавичці «Під -\n= вербою»\n",
+            "Правила співжиття в рукавичці «Під вербою»",
+        ),
+        (
+            "magi wees\n\n= Членські внески рукавички «Під ялиною» 7\n",
+            "Членські внески рукавички «Під ялиною»",
+        ),
+        (
+            "7 й Чергування в рукавичці «У ліщині»\n\nУ рукавичці «У ліщині»…",
+            "Чергування в рукавичці «У ліщині»",
+        ),
+        # Мішанина алфавітів, незакриті лапки, речення — не назва
+        ("Статут OCMJ «Ha узліссі»\n", None),
+        ("Небезпеки поруч із рукавичкою «Біля чу» бобрової греблі»\n", None),
+        ("Увага всім мешканцям рукавички «Біля греблі»! Життя поруч із водою…\n", None),
+        ("—— OcnosHe\n", None),
+    ],
+)
+def test_ocr_title(raw: str, title: str | None) -> None:
+    assert parse_module.ocr_title(parse_module._clean_ocr(raw)) == title
+
+
+def test_title_falls_back_to_file_name() -> None:
+    document = parse("Гриби шукайте після дощу, коли земля волога.".encode(), "Грибна порада.txt")
+    assert document.title == "Грибна порада"

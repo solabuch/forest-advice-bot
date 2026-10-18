@@ -16,7 +16,7 @@ import tempfile
 import threading
 import zipfile
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePath
 from xml.etree.ElementTree import Element
 
@@ -43,6 +43,7 @@ OCR_THRESHOLD = 120
 TOOL_TIMEOUT = 60
 HEADING_MAX = 90
 TITLE_MAX = 150
+TITLE_MAX_OCR = 100
 
 # pdfium не потокобезпечний: два документи одночасно — через замок
 _PDFIUM = threading.Lock()
@@ -86,6 +87,9 @@ def parse(data: bytes, file_name: str) -> ParsedDocument:
     document = parser(data)
     if not document.text.strip():
         raise ParseError("У документі не знайшлося тексту")
+    if not document.title:
+        # D-17: без заголовка (чи з нечитким заголовком скану) — назва файлу
+        return replace(document, title=PurePath(file_name).stem.strip() or None)
     return document
 
 
@@ -296,18 +300,26 @@ def parse_pdf(data: bytes) -> ParsedDocument:
             pdf.close()
 
     body = _body_font([p for p in pages if isinstance(p, list)])
+    scan_title: str | None = None
     blocks: list[Block] = []
     section: str | None = None
     for number, page_content in enumerate(pages, start=1):
         if isinstance(page_content, list):
             page_blocks, section = _pdf_page_blocks(page_content, number, body, section)
         else:
+            text = ocr(page_content)
+            if number == 1:
+                scan_title = ocr_title(text)
             page_blocks, section = blocks_from_lines(
-                ocr(page_content).splitlines(), page=number, section=section
+                text.splitlines(), page=number, section=section
             )
         blocks.extend(page_blocks)
     ocr_pages = sum(isinstance(p, np.ndarray) for p in pages)
-    return _document(blocks, ocr_pages=ocr_pages, pages=len(pages))
+    document = _document(blocks, ocr_pages=ocr_pages, pages=len(pages))
+    if isinstance(pages[0] if pages else None, np.ndarray):
+        # Перша сторінка — скан: заголовок за евристикою тексту ненадійний
+        return replace(document, title=scan_title)
+    return document
 
 
 def _scan_dpi(page: pdfium.PdfPage) -> float:
@@ -352,15 +364,63 @@ def ocr(pixels: np.ndarray) -> str:
     return _clean_ocr(result.stdout.decode("utf-8", errors="replace"))
 
 
+def _cyrillic(text: str) -> int:
+    return sum("Ѐ" <= ch <= "ӿ" for ch in text)
+
+
 def _clean_ocr(text: str) -> str:
-    """Рядки-сміття від плям і рамок: без жодної літери або з однієї-двох літер серед знаків."""
+    """Рядки-сміття від плям і рамок: майже без літер, а на кириличній сторінці —
+    ще й короткі рядки без жодної кириличної літери («ij», «magi wees»)."""
+    cyrillic_page = _cyrillic(text) > sum(ch.isalpha() for ch in text) / 2
     lines = []
     for line in text.splitlines():
-        letters = sum(ch.isalpha() for ch in line)
-        if line.strip() and letters < max(2, len(line.strip()) // 3):
+        stripped = line.strip()
+        letters = sum(ch.isalpha() for ch in stripped)
+        if stripped and letters < max(2, len(stripped) // 3):
+            continue
+        if cyrillic_page and stripped and not _cyrillic(stripped) and len(stripped.split()) < 3:
             continue
         lines.append(line)
     return "\n".join(lines)
+
+
+def _strip_junk_edges(line: str) -> str:
+    """Краї рядка скану: знаки без літер і поодинокі літери від плям («7 й Чергування… _»)."""
+    words = line.split()
+
+    def junk(word: str) -> bool:
+        letters = sum(ch.isalpha() for ch in word)
+        quoted = "«" in word or "»" in word
+        latin_crumb = letters <= 2 and not _cyrillic(word)
+        return letters == 0 or (not quoted and (letters == 1 or latin_crumb))
+
+    while words and junk(words[0]):
+        words.pop(0)
+    while words and junk(words[-1]):
+        words.pop()
+    return " ".join(words)
+
+
+def ocr_title(text: str) -> str | None:
+    """Назва скану (D-17) — лише якщо OCR прочитав її чисто; інакше None → назва файлу.
+
+    Перший рядок із кількох кириличних слів; назва в лапках, що не закрилась,
+    продовжується наступним рядком. Мішанина алфавітів («OCMJ «Ha узліссі»»),
+    речення чи надто довгий рядок — не назва.
+    """
+    lines = [cleaned for raw in text.splitlines()[:8] if (cleaned := _strip_junk_edges(raw))]
+    for index, line in enumerate(lines[:4]):
+        words = [w for w in line.split() if _cyrillic(w) >= 2]
+        if len(words) < 2:
+            continue
+        title = line
+        if title.count("«") > title.count("»") and index + 1 < len(lines):
+            title = f"{title} {lines[index + 1]}"
+        letters = sum(ch.isalpha() for ch in title)
+        clean = _cyrillic(title) >= letters * 0.95 and title.count("«") == title.count("»")
+        sentence = re.search(r"[.!?…]\s", title) or title.endswith(("!", "?"))
+        return title if clean and not sentence and len(title) <= TITLE_MAX_OCR else None
+    return None
 
 
 # --- DOCX і ODT: zip + XML ---
