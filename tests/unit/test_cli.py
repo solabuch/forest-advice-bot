@@ -6,9 +6,14 @@ import sys
 
 import pytest
 
-from forest_bot import db, health
+from forest_bot import db, health, startup
 from forest_bot.__main__ import EXIT_CONFIG, main
-from forest_bot.config import DatabaseSettings
+from forest_bot.config import DatabaseSettings, Settings
+from forest_bot.startup import CheckResult
+
+
+async def embeddings_ok(_: Settings) -> CheckResult:
+    return CheckResult("Embeddings", True, "фейкова модель")
 
 
 def test_config_error_exits_2_without_traceback(capsys: pytest.CaptureFixture[str]) -> None:
@@ -21,6 +26,7 @@ def test_config_error_exits_2_without_traceback(capsys: pytest.CaptureFixture[st
 @pytest.mark.usefixtures("valid_env")
 def test_offline_check_warnings_and_strict(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(shutil, "which", lambda _: None)
+    monkeypatch.setattr(startup, "check_embeddings", embeddings_ok)
     assert main(["check", "--offline", "--no-db"]) == 0
     assert main(["check", "--offline", "--no-db", "--strict"]) == 1
 

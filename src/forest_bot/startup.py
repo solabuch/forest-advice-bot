@@ -14,7 +14,9 @@ from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError
 
 from forest_bot import db
 from forest_bot.config import Settings
+from forest_bot.embeddings import MODEL_NAME, EmbeddingError, load_embedder
 from forest_bot.llm.profiles import DEFAULT_CHAIN
+from forest_bot.models import EMBEDDING_DIM
 from forest_bot.places import PlaceKind, PlacesError, load_places
 
 logger = logging.getLogger(__name__)
@@ -64,6 +66,22 @@ async def check_places(settings: Settings) -> CheckResult:
         return CheckResult("Місця", False, str(error))
     counts = [len(graph.of_kind(kind)) for kind in PlaceKind]
     return CheckResult("Місця", True, "ліс: {}, частин: {}, рукавичок: {}".format(*counts))
+
+
+async def check_embeddings(settings: Settings) -> CheckResult:
+    try:
+        embedder = await asyncio.to_thread(load_embedder, settings.embedding_model_dir)
+        started = time.perf_counter()
+        vector = await embedder.aembed_query("перевірка")
+    except (EmbeddingError, RuntimeError, OSError) as error:
+        return CheckResult("Embeddings", False, str(error))
+    took = (time.perf_counter() - started) * 1000
+    if vector.shape != (EMBEDDING_DIM,):
+        detail = f"модель дає {vector.shape[-1]} вимірів, а БД чекає {EMBEDDING_DIM}"
+        return CheckResult("Embeddings", False, detail)
+    return CheckResult(
+        "Embeddings", True, f"{MODEL_NAME}, {EMBEDDING_DIM} вимірів, запит {took:.0f} мс"
+    )
 
 
 async def _tesseract_langs(binary: str) -> set[str]:
@@ -172,6 +190,7 @@ async def run_checks(
     if database and (await run(check_database(settings))).ok:
         await run(check_migrations(settings))
     await run(check_places(settings))
+    await run(check_embeddings(settings))
     await run(check_tesseract())
     await run(check_antiword())
     if not offline:

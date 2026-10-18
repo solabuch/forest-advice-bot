@@ -12,6 +12,8 @@ htmlcov
 docs
 tests
 eval/results
+# Локальні дані й моделі (сотні МБ): образ качає модель сам
+.data
 .env
 .env.*
 gjxfnjr
