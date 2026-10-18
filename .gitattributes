@@ -15,3 +15,5 @@
 # Байти як на Google Диску: зміни архіву визначаються за sha256
 data/archive/** -text
 examples/**     -text
+# Фікстури парсерів: cp1251, CRLF — саме те, що надсилають звірі
+tests/fixtures/formats/** -text

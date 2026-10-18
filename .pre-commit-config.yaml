@@ -1,5 +1,6 @@
 # Локальні перевірки перед комітом; mypy — у `poe check` і CI (повільний для хука)
-exclude: ^(data/archive|examples)/
+# Архів, приклади й фікстури форматів — байти як є (cp1251, CRLF у .rtf)
+exclude: ^(data/archive|examples|tests/fixtures/formats)/
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
