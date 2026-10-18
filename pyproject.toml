@@ -1,0 +1,80 @@
+[project]
+name = "forest-bot"
+version = "0.1.0"
+description = "Telegram-бот порад для звірів лісу: документи → питання → відповідь із джерелом"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+[project.scripts]
+forest-bot = "forest_bot.__main__:main"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.15",
+  "pip-audit>=2.9",
+  "poethepoet>=0.34",
+  "pre-commit>=4.2",
+  "pytest>=8.3",
+  "pytest-asyncio>=1.0",
+  "pytest-cov>=6.1",
+  "ruff>=0.11",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/forest_bot"]
+
+# --- Задачі: uv run poe <задача>; check = те саме, що CI ---
+[tool.poe.tasks]
+lint = [{ cmd = "ruff check ." }, { cmd = "ruff format --check ." }]
+fmt = [{ cmd = "ruff format ." }, { cmd = "ruff check --fix ." }]
+types = "mypy"
+test-unit = "pytest -m \"not integration and not e2e\""
+test = "pytest"
+check = ["lint", "types", "test"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+extend-exclude = ["data/archive", "examples"]
+
+[tool.ruff.lint]
+select = [
+  "E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "S", "PTH",
+  "RUF", "N", "C4", "DTZ", "T20", "LOG", "G",
+]
+# Українські рядки й коментарі — не помилка
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers --cov=forest_bot --cov-report=term-missing"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "integration: потрібна БД (Postgres + pgvector)",
+  "e2e: сценарій через Dispatcher із mock-сесією Bot API",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["forest_bot"]
+
+[tool.uv]
+# та сама версія, що в CI й pre-commit: формат uv.lock не «гуляє»
+required-version = ">=0.13.1"
