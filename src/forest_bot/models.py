@@ -301,6 +301,53 @@ class Job(Base):
     )
 
 
+class UploadStatus(StrEnum):
+    NEEDS_NAME = "needs_name"  # звір ще не назвався (D-34)
+    QUEUED = "queued"  # чекає розбору у фоні
+    NEEDS_PLACE = "needs_place"  # місце не визначилось — кнопки (R-08)
+    NEEDS_CHOICE = "needs_choice"  # заміна чи окремий документ (D-37)
+    INDEXING = "indexing"
+    DONE = "done"
+    NEEDS_TITLE = "needs_title"  # звір натиснув «Змінити назву» (D-17)
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+
+class Upload(Base):
+    """Документ, надісланий звіром, до того як він став документом бота.
+
+    Кнопки несуть id чернетки, а стан — тут, а не в пам'яті: діалог (місце, заміна)
+    переживає рестарт, а кілька файлів одним повідомленням — це кілька чернеток (D-53).
+    """
+
+    __tablename__ = "uploads"
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    # Файли одним повідомленням (media group) — одна партія й один підсумок (D-53)
+    batch: Mapped[str | None] = mapped_column(String(64))
+    telegram_file_id: Mapped[str] = mapped_column(String(255))
+    file_name: Mapped[str] = mapped_column(String(255))
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    mime: Mapped[str | None] = mapped_column(String(100))
+    file_sha256: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[UploadStatus] = mapped_column(str_enum(UploadStatus))
+    title: Mapped[str | None] = mapped_column(String(300))
+    place_id: Mapped[str | None] = mapped_column(ForeignKey("places.id"))
+    # Розібраний текст: після відповіді звіра не розбирати (і не OCR-ити) вдруге
+    parsed: Mapped[dict[str, Any] | None]
+    # Кандидати на заміну (D-37) і вибір звіра
+    candidate_ids: Mapped[list[int]] = mapped_column(ARRAY(BigInteger), server_default=text("'{}'"))
+    replaces_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id"))
+    document_id: Mapped[int | None] = mapped_column(ForeignKey("documents.id"))
+    error: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (Index("ix_uploads_user_status", "user_id", "status"),)
+
+
 class QaLog(Base):
     """Журнал питань і відповідей для статистики й оцінок (D-50, D-52) — без автора."""
 

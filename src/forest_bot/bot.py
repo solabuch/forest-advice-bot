@@ -9,13 +9,15 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramConflictError
 from aiogram.filters import CommandStart
-from aiogram.types import Message
+from aiogram.types import InlineKeyboardMarkup, Message
 
 from forest_bot import db, jobs, startup
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
+from forest_bot.handlers import upload
 from forest_bot.health import heartbeat_loop
 from forest_bot.ingest.archive import import_archive
+from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
 from forest_bot.llm.client import GroqClient
 from forest_bot.llm.profiles import DEFAULT_CHAIN
 from forest_bot.places import load_places
@@ -23,10 +25,7 @@ from forest_bot.repo.places import sync_places
 
 logger = logging.getLogger(__name__)
 
-router = Router(name="core")
 
-
-@router.message(CommandStart())
 async def on_start(message: Message) -> None:
     # Тимчасове привітання; повний онбординг — разом із UX-діалогами
     await message.answer(
@@ -34,10 +33,33 @@ async def on_start(message: Message) -> None:
     )
 
 
-def build_dispatcher() -> Dispatcher:
+def build_dispatcher(**dependencies: object) -> Dispatcher:
+    """Залежності (конвеєр, налаштування) хендлери отримують аргументами за назвою."""
     dp = Dispatcher()
-    dp.include_router(router)
+    dp.workflow_data.update(dependencies)
+    core = Router(name="core")
+    core.message.register(on_start, CommandStart())
+    dp.include_router(core)
+    dp.include_router(upload.build_router())
     return dp
+
+
+class BotMessenger:
+    """Telegram для фонових задач: повідомлення звірові й файл за file_id."""
+
+    def __init__(self, bot: Bot) -> None:
+        self._bot = bot
+
+    async def send(
+        self, chat_id: int, text: str, markup: InlineKeyboardMarkup | None = None
+    ) -> None:
+        await self._bot.send_message(chat_id, text, reply_markup=markup)
+
+    async def download(self, file_id: str) -> bytes:
+        buffer = await self._bot.download(file_id)
+        if buffer is None:
+            raise RuntimeError(f"Telegram не віддав файл {file_id}")
+        return buffer.read()
 
 
 def build_bot(settings: Settings) -> Bot:
@@ -84,7 +106,17 @@ async def run(settings: Settings) -> int:
     async def archive(_: dict[str, object]) -> None:
         await import_archive(sessions, settings.archive_dir, embedder, graph, llm)
 
-    worker = jobs.Worker(sessions, {ARCHIVE_IMPORT: archive})
+    bot = build_bot(settings)
+    pipeline = UploadPipeline(sessions, BotMessenger(bot), embedder, graph, llm)
+
+    async def prepare(payload: dict[str, object]) -> None:
+        await pipeline.prepare(int(str(payload["upload_id"])))
+
+    async def index(payload: dict[str, object]) -> None:
+        await pipeline.index(int(str(payload["upload_id"])))
+
+    worker = jobs.Worker(sessions, {ARCHIVE_IMPORT: archive, PREPARE: prepare, INDEX: index})
+    pipeline.wake = worker.wake
     background = [asyncio.create_task(heartbeat_loop())]
     if settings.role in ("all", "worker"):
         # Архів — на кожному старті: нові й змінені файли знімка, решта пропускається
@@ -93,7 +125,6 @@ async def run(settings: Settings) -> int:
                 await jobs.enqueue(session, ARCHIVE_IMPORT)
         background.append(asyncio.create_task(worker.run()))
 
-    bot = build_bot(settings)
     try:
         if settings.role == "worker":
             logger.info("Worker готовий за %.1f с", time.monotonic() - started)
@@ -106,7 +137,7 @@ async def run(settings: Settings) -> int:
             return 2
         me = await bot.get_me()
         logger.info("Бот @%s готовий за %.1f с", me.username, time.monotonic() - started)
-        await build_dispatcher().start_polling(bot)
+        await build_dispatcher(pipeline=pipeline, settings=settings).start_polling(bot)
     finally:
         for task in background:
             task.cancel()
