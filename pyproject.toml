@@ -11,13 +11,16 @@ dependencies = [
     "aiogram>=3.20",
     "alembic>=1.15",
     "asyncpg>=0.32.0",
+    "defusedxml>=0.7.1",
     "httpx>=0.28",
     "numpy>=2.5",
     "onnxruntime>=1.31",
     "pgvector>=0.4",
     "pydantic-settings>=2.9",
+    "pypdfium2>=5.14",
     "pyyaml>=6.0",
     "sqlalchemy[asyncio]>=2.0.40",
+    "striprtf>=0.0.33",
     "tokenizers>=0.23",
     "tzdata>=2026.5",
 ]
@@ -36,6 +39,7 @@ dev = [
   "pytest-asyncio>=1.0",
   "pytest-cov>=6.1",
   "ruff>=0.11",
+  "types-defusedxml>=0.7.0.20260504",
   "types-pyyaml>=6.0.12.20260906",
 ]
 
@@ -86,9 +90,9 @@ files = ["src", "tests"]
 mypy_path = "src"
 plugins = ["pydantic.mypy"]
 
-# onnxruntime без типів (py.typed немає)
+# Бібліотеки без типів (py.typed немає)
 [[tool.mypy.overrides]]
-module = ["onnxruntime", "onnxruntime.*"]
+module = ["onnxruntime", "onnxruntime.*", "pypdfium2", "pypdfium2.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

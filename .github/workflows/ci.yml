@@ -71,6 +71,12 @@ jobs:
           path: .data/models
           key: model-${{ hashFiles('scripts/fetch_model.py') }}
       - run: uv run poe model
+      # Ті самі програми, що в образі: OCR сканів і старі .doc
+      - name: OCR and .doc tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            tesseract-ocr tesseract-ocr-ukr tesseract-ocr-eng antiword
       - run: uv run pytest --junitxml=junit.xml --cov-report=markdown-append:"$GITHUB_STEP_SUMMARY"
 
   secrets:
