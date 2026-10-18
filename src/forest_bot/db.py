@@ -1,4 +1,4 @@
-"""Міграції БД: застосувати й перевірити, що схема на останній ревізії."""
+"""БД: рушій і сесії, міграції та перевірка, що схема на останній ревізії."""
 
 import asyncio
 import logging
@@ -7,6 +7,12 @@ import asyncpg
 from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from forest_bot.config import DatabaseSettings
 
@@ -16,6 +22,15 @@ logger = logging.getLogger(__name__)
 SCRIPT_LOCATION = "forest_bot:migrations"
 CONNECT_ERRORS = (OSError, asyncpg.PostgresError, TimeoutError)
 DB_WAIT_SECONDS = 60
+
+
+def create_engine(settings: DatabaseSettings) -> AsyncEngine:
+    # pre_ping: після рестарту Postgres мертві з'єднання з пулу відкидаються, а не падають
+    return create_async_engine(settings.database_url, pool_pre_ping=True, pool_size=5)
+
+
+def session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(engine, expire_on_commit=False)
 
 
 def alembic_config(settings: DatabaseSettings) -> Config:

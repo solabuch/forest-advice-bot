@@ -7,16 +7,16 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from forest_bot.config import load_settings
+from forest_bot.config import load_database_settings
+from forest_bot.models import Base
 
 config = context.config
-# Схему (MetaData) підключимо разом із моделями домену
-target_metadata = None
+target_metadata = Base.metadata
 
 
 def database_url() -> str:
     # forest_bot migrate передає URL явно; `alembic …` з консолі бере його з .env
-    return config.get_main_option("sqlalchemy.url") or load_settings().database_url
+    return config.get_main_option("sqlalchemy.url") or load_database_settings().database_url
 
 
 def run_offline() -> None:
@@ -26,7 +26,7 @@ def run_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
     with context.begin_transaction():
         context.run_migrations()
 
