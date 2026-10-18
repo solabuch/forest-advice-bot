@@ -116,6 +116,9 @@ class PlaceGraph:
     def forest(self) -> Place:
         return next(p for p in self.places if p.kind is PlaceKind.FOREST)
 
+    def __contains__(self, place_id: object) -> bool:
+        return place_id in self._by_id
+
     def get(self, place_id: str) -> Place:
         try:
             return self._by_id[place_id]
