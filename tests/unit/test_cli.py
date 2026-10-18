@@ -4,8 +4,9 @@ import shutil
 
 import pytest
 
-from forest_bot import health
+from forest_bot import db, health
 from forest_bot.__main__ import EXIT_CONFIG, main
+from forest_bot.config import DatabaseSettings
 
 
 def test_config_error_exits_2_without_traceback(capsys: pytest.CaptureFixture[str]) -> None:
@@ -33,3 +34,15 @@ def test_version(capsys: pytest.CaptureFixture[str]) -> None:
         main(["--version"])
     assert caught.value.code == 0
     assert capsys.readouterr().out.startswith("forest_bot ")
+
+
+def test_migrate_does_not_need_bot_tokens(monkeypatch: pytest.MonkeyPatch) -> None:
+    called: list[DatabaseSettings] = []
+
+    def fake_migrate(settings: DatabaseSettings) -> int:
+        called.append(settings)
+        return 0
+
+    monkeypatch.setattr(db, "migrate", fake_migrate)
+    assert main(["migrate"]) == 0
+    assert len(called) == 1

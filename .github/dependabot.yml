@@ -22,3 +22,11 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: ci
+
+  # Базові образи (Dockerfile, digest)
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build

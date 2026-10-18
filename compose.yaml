@@ -1,0 +1,55 @@
+# Запуск: cp .env.example .env → вписати 2 токени → docker compose up
+name: forest-bot
+
+x-app: &app
+  # Спершу тягнемо готовий образ; не вийшло (немає доступу чи мережі) — збираємо локально
+  image: ghcr.io/solabuch/forest-advice-bot:latest
+  build: .
+  env_file:
+    # Без .env compose не падає — пояснення, чого бракує, дає сам застосунок
+    - path: .env
+      required: false
+  environment:
+    DATABASE_URL: postgresql+asyncpg://forest:${POSTGRES_PASSWORD:-forest}@db:5432/forest
+  init: true
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.7-pg17
+    environment:
+      POSTGRES_USER: forest
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-forest}
+      POSTGRES_DB: forest
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forest -d forest"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Одноразово: дочекатися БД і застосувати міграції
+  migrate:
+    <<: *app
+    command: ["migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+    restart: "no"
+
+  app:
+    <<: *app
+    command: ["run"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - appdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  appdata:

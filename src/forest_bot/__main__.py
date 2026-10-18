@@ -6,8 +6,13 @@ import logging
 import sys
 from collections.abc import Sequence
 
-from forest_bot import __version__, bot, health, startup
-from forest_bot.config import ConfigError, load_settings
+from forest_bot import __version__, bot, db, health, startup
+from forest_bot.config import (
+    ConfigError,
+    DatabaseSettings,
+    load_database_settings,
+    load_settings,
+)
 from forest_bot.logs import setup_logging
 
 logger = logging.getLogger("forest_bot")
@@ -25,7 +30,20 @@ def build_parser() -> argparse.ArgumentParser:
     check.add_argument("--no-db", action="store_true", help="без бази даних")
     check.add_argument("--strict", action="store_true", help="попередження = помилка")
     commands.add_parser("health", help="для HEALTHCHECK: процес живий")
+    commands.add_parser("migrate", help="дочекатися БД і застосувати міграції")
     return parser
+
+
+def _config_failed(error: ConfigError) -> int:
+    setup_logging()
+    for problem in error.problems:
+        logger.error(problem)
+    return EXIT_CONFIG
+
+
+def _start_logging(settings: DatabaseSettings, command: str) -> None:
+    setup_logging(settings.log_level, settings.log_format, settings.secret_values())
+    logger.info("forest_bot %s, команда %s", __version__, command)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -37,16 +55,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     if command == "health":
         return 0 if health.is_alive() else 1
 
+    # Міграціям потрібна лише БД: без токенів бота вони теж мають пройти
+    if command == "migrate":
+        try:
+            db_settings = load_database_settings()
+        except ConfigError as error:
+            return _config_failed(error)
+        _start_logging(db_settings, command)
+        return db.migrate(db_settings)
+
     try:
         settings = load_settings()
     except ConfigError as error:
-        setup_logging()
-        for problem in error.problems:
-            logger.error(problem)
-        return EXIT_CONFIG
-
-    setup_logging(settings.log_level, settings.log_format, settings.secret_values())
-    logger.info("forest_bot %s, команда %s", __version__, command)
+        return _config_failed(error)
+    _start_logging(settings, command)
 
     if command == "check":
         results = asyncio.run(

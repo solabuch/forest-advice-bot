@@ -4,7 +4,7 @@ import asyncio
 import logging
 import shutil
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable
 from dataclasses import dataclass
 
 import asyncpg
@@ -12,6 +12,7 @@ import httpx
 from aiogram import Bot
 from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError
 
+from forest_bot import db
 from forest_bot.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,18 @@ async def check_database(settings: Settings) -> CheckResult:
     finally:
         await conn.close()
     return CheckResult("БД", True, f"Postgres {version}")
+
+
+async def check_migrations(settings: Settings) -> CheckResult:
+    head = db.head_revision(settings)
+    try:
+        current = await db.current_revision(settings)
+    except db.CONNECT_ERRORS as error:
+        return CheckResult("Міграції", False, f"немає з'єднання з базою ({type(error).__name__})")
+    if current != head:
+        detail = f"БД на ревізії {current or '—'}, потрібна {head} — запусти migrate"
+        return CheckResult("Міграції", False, detail)
+    return CheckResult("Міграції", True, f"ревізія {head}")
 
 
 async def _tesseract_langs(binary: str) -> set[str]:
@@ -126,17 +139,22 @@ async def run_checks(
     settings: Settings, *, offline: bool = False, database: bool = True
 ) -> list[CheckResult]:
     """Запускає перевірки по черзі й логує кожну; повертає всі результати."""
-    checks: list[Callable[[], Awaitable[CheckResult]]] = []
-    if database:
-        checks.append(lambda: check_database(settings))
-    checks += [check_tesseract, check_antiword]
-    if not offline:
-        checks += [lambda: check_telegram(settings), lambda: check_groq(settings)]
-    results = []
-    for check in checks:
-        result = await _timed(check())
+    results: list[CheckResult] = []
+
+    async def run(check: Awaitable[CheckResult]) -> CheckResult:
+        result = await _timed(check)
         _log(result)
         results.append(result)
+        return result
+
+    # Без БД міграції не перевіряємо — інакше та сама помилка двічі
+    if database and (await run(check_database(settings))).ok:
+        await run(check_migrations(settings))
+    await run(check_tesseract())
+    await run(check_antiword())
+    if not offline:
+        await run(check_telegram(settings))
+        await run(check_groq(settings))
     return results
 
 

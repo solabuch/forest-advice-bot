@@ -1,0 +1,19 @@
+# У контекст збірки — лише те, що потрібно образу
+.git
+.github
+.venv
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+coverage.xml
+htmlcov
+docs
+tests
+eval/results
+.env
+.env.*
+gjxfnjr
+*.md
+!README.md
