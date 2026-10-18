@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "python",
+  "include-component-in-tag": false,
+  "bump-minor-pre-major": true,
+  "packages": {
+    ".": {
+      "package-name": "forest-bot",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": ["src/forest_bot/__init__.py"]
+    }
+  },
+  "changelog-sections": [
+    { "type": "feat", "section": "Можливості" },
+    { "type": "fix", "section": "Виправлення" },
+    { "type": "perf", "section": "Швидкодія" },
+    { "type": "refactor", "section": "Рефакторинг" },
+    { "type": "docs", "section": "Документація" },
+    { "type": "test", "section": "Тести" },
+    { "type": "build", "section": "Збірка" },
+    { "type": "ci", "section": "CI" },
+    { "type": "chore", "hidden": true }
+  ]
+}

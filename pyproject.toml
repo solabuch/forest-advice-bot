@@ -1,6 +1,7 @@
 [project]
 name = "forest-bot"
-version = "0.1.0"
+# Версію веде release-please в src/forest_bot/__init__.py; динамічна версія не потрапляє в uv.lock
+dynamic = ["version"]
 description = "Telegram-бот порад для звірів лісу: документи → питання → відповідь із джерелом"
 readme = "README.md"
 license = "MIT"
@@ -29,6 +30,9 @@ dev = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/forest_bot/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/forest_bot"]
