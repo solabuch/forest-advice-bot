@@ -14,6 +14,7 @@ from aiogram.exceptions import TelegramNetworkError, TelegramUnauthorizedError
 
 from forest_bot import db
 from forest_bot.config import Settings
+from forest_bot.llm.profiles import DEFAULT_CHAIN
 from forest_bot.places import PlaceKind, PlacesError, load_places
 
 logger = logging.getLogger(__name__)
@@ -124,8 +125,18 @@ async def check_groq(
     if response.status_code != 200:
         detail = f"Groq відповів {response.status_code} — відповіді затримуватимуться"
         return CheckResult("Groq", False, detail, fatal=False)
-    models = response.json().get("data", [])
-    return CheckResult("Groq", True, f"ключ дійсний, моделей: {len(models)}")
+    available = {m.get("id") for m in response.json().get("data", [])}
+    chain = settings.groq_models or list(DEFAULT_CHAIN)
+    present = [m for m in chain if m in available]
+    missing = [m for m in chain if m not in available]
+    if not present:
+        detail = f"жодної моделі ланцюжка немає в Groq ({', '.join(missing)}) — онови GROQ_MODELS"
+        return CheckResult("Groq", False, detail)
+    detail = f"ключ дійсний, моделі: {' → '.join(present)}"
+    if missing:
+        detail += f"; немає в Groq: {', '.join(missing)} — їх буде пропущено"
+        return CheckResult("Groq", False, detail, fatal=False)
+    return CheckResult("Groq", True, detail)
 
 
 async def _timed(check: Awaitable[CheckResult]) -> CheckResult:
