@@ -1,0 +1,27 @@
+name: Release
+
+# Після кожного merge у main: release-please веде release-PR (CHANGELOG + версія).
+# Merge release-PR → тег vX.Y.Z і GitHub Release.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-24.04
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  # Тег від GITHUB_TOKEN не запускає інших workflow, тому образ релізу
+  # збирається звідси через workflow_call (додається разом із Dockerfile)
