@@ -188,7 +188,7 @@ async def on_button(
                 await reply(texts.ASK_TITLE.format(title=upload.title))
         elif action == "move" and upload.status is UploadStatus.DONE and reply:
             await reply(
-                texts.ASK_PLACE.format(title=upload.title),
+                texts.ASK_MOVE.format(title=upload.title),
                 reply_markup=keyboards.place_picker(upload.id, pipeline.graph, action="moveto"),
             )
         elif action == "moveto" and upload.document_id and value in pipeline.graph:

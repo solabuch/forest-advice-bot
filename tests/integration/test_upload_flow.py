@@ -274,6 +274,7 @@ async def test_change_title_and_place(forest: Forest) -> None:
     assert forest.replies()[-1] == texts.TITLE_SAVED.format(title="Внески дубової рукавички")
 
     await forest.press(UploadAction(id=upload.id, action="move"))
+    assert forest.replies()[-1] == texts.ASK_MOVE.format(title="Внески дубової рукавички")
     await forest.press(UploadAction(id=upload.id, action="moveto", value="deciduous"))
     assert forest.replies()[-1] == texts.PLACE_SAVED.format(
         title="Внески дубової рукавички", place="листяного лісу"

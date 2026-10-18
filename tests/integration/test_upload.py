@@ -159,6 +159,16 @@ async def test_unclear_place_asks_author(pipeline: UploadPipeline) -> None:
     assert (await state(pipeline, upload_id)).status is UploadStatus.DONE
 
 
+async def test_unknown_mitten_is_named(pipeline: UploadPipeline) -> None:
+    text = "Листопад\n\nШановні мешканці рукавички «Під кленом»! Листя згрібаємо в суботу.".encode()
+    upload_id = await upload(pipeline, text, "листопад.txt")
+    await pipeline.prepare(upload_id)
+    assert (await state(pipeline, upload_id)).status is UploadStatus.NEEDS_PLACE
+    _, question, markup = messenger(pipeline).sent[-1]
+    assert question == texts.ASK_UNKNOWN_PLACE.format(title="Листопад", name="Під кленом")
+    assert markup is not None
+
+
 async def test_several_places_ask_to_split(pipeline: UploadPipeline) -> None:
     text = "Внески\n\nДля мешканців рукавичок «Під дубом» і «У ліщині». Внесок — 4 жолуді.".encode()
     upload_id = await upload(pipeline, text, "внески.txt")

@@ -108,10 +108,13 @@ class UploadPipeline:
                 await self._summary(session, upload)
             elif decision.place_id is None:
                 upload.status = UploadStatus.NEEDS_PLACE
+                question = (
+                    texts.ASK_UNKNOWN_PLACE.format(title=upload.title, name=decision.unknown)
+                    if decision.unknown
+                    else texts.ASK_PLACE.format(title=upload.title)
+                )
                 await self.messenger.send(
-                    chat_id,
-                    texts.ASK_PLACE.format(title=upload.title),
-                    keyboards.place_picker(upload.id, self.graph),
+                    chat_id, question, keyboards.place_picker(upload.id, self.graph)
                 )
             else:
                 upload.place_id = decision.place_id
