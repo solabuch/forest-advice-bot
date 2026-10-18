@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/solabuch/forest-advice-bot/compare/v0.2.0...v0.2.1) (2026-10-18)
+
+
+### Виправлення
+
+* fast container healthcheck and UTF-8 logs on Windows ([#10](https://github.com/solabuch/forest-advice-bot/issues/10)) ([94cc3bf](https://github.com/solabuch/forest-advice-bot/commit/94cc3bf3f6a009a3240b692e54644b49b8839d45))
+
 ## [0.2.0](https://github.com/solabuch/forest-advice-bot/compare/v0.1.0...v0.2.0) (2026-10-18)
 
 
