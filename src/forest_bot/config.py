@@ -77,6 +77,8 @@ class Settings(DatabaseSettings):
     places_file: Path | None = None
     # Модель embeddings; в образі — /opt/models/…, локально — uv run poe model
     embedding_model_dir: Path = Path(".data/models/multilingual-e5-small")
+    # Знімок «Лісового архіву» з маніфестом; в образі — /app/data/archive
+    archive_dir: Path = Path("data/archive")
 
     @field_validator("telegram_bot_token", "groq_api_key", mode="before")
     @classmethod

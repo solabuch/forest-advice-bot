@@ -4,7 +4,7 @@ import os
 from collections.abc import AsyncIterator
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from forest_bot import db
 from forest_bot.config import Settings
@@ -43,5 +43,21 @@ async def session(migrated: Settings) -> AsyncIterator[AsyncSession]:
             yield session
         finally:
             await session.close()
+            await transaction.rollback()
+    await engine.dispose()
+
+
+@pytest.fixture
+async def sessions(migrated: Settings) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
+    """Фабрика сесій для коду, що сам комітить (worker, імпорт): коміти — це savepoint-и
+    всередині зовнішньої транзакції, яку після тесту відкочуємо."""
+    engine = db.create_engine(migrated)
+    async with engine.connect() as conn:
+        transaction = await conn.begin()
+        try:
+            yield async_sessionmaker(
+                bind=conn, expire_on_commit=False, join_transaction_mode="create_savepoint"
+            )
+        finally:
             await transaction.rollback()
     await engine.dispose()
