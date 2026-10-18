@@ -6,13 +6,16 @@ readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.13,<3.14"
-dependencies = []
+dependencies = [
+    "asyncpg>=0.32.0",
+]
 
 [project.scripts]
 forest-bot = "forest_bot.__main__:main"
 
 [dependency-groups]
 dev = [
+  "asyncpg-stubs>=0.32.0",
   "mypy>=1.15",
   "pip-audit>=2.9",
   "poethepoet>=0.34",
