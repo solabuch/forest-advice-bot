@@ -41,7 +41,7 @@ ENV PATH="/opt/venv/bin:${PATH}" \
 WORKDIR /app
 USER app
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD ["python", "-m", "forest_bot", "health"]
 ENTRYPOINT ["python", "-m", "forest_bot"]
 CMD ["run"]

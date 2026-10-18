@@ -1,9 +1,11 @@
 """Логування: усе в stdout, секрети маскуються в кожному записі."""
 
+import io
 import json
 import logging
 import logging.config
 import re
+import sys
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from typing import ClassVar
@@ -56,6 +58,9 @@ def redact(text: str, secrets: Iterable[str] = ()) -> str:
 def setup_logging(level: str = "INFO", fmt: str = "text", secrets: Iterable[str] = ()) -> None:
     """Налаштовує кореневий логер; чужі логери не вимикає."""
     RedactingFormatter.secrets = {s for s in secrets if s}
+    # Windows у пайпі віддає stdout у cp1251 — кирилиця в логах ламається
+    if isinstance(sys.stdout, io.TextIOWrapper) and sys.stdout.encoding.lower() != "utf-8":
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     formatter = JsonFormatter if fmt == "json" else RedactingFormatter
     logging.config.dictConfig(
         {

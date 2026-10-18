@@ -1,6 +1,8 @@
-"""Liveness через heartbeat-файл: HTTP-порт для long polling не потрібен."""
+"""Liveness через heartbeat-файл: HTTP-порт для long polling не потрібен.
 
-import asyncio
+Лише stdlib і без asyncio на рівні модуля: перевірка має стартувати за мілісекунди.
+"""
+
 import logging
 import tempfile
 import time
@@ -19,6 +21,8 @@ def beat(path: Path = HEARTBEAT_FILE) -> None:
 
 async def heartbeat_loop(path: Path = HEARTBEAT_FILE, interval: float = HEARTBEAT_INTERVAL) -> None:
     """Оновлює файл, доки живий event loop; завис loop — файл старіє."""
+    import asyncio
+
     while True:
         try:
             beat(path)
