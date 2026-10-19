@@ -46,6 +46,8 @@ ENV PATH="/opt/venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 WORKDIR /app
+# Знімок архіву: бот знає його з першого старту, навіть без доступу до Drive (D-40)
+COPY data/archive ./data/archive
 USER app
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
