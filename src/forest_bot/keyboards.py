@@ -37,6 +37,22 @@ class LibraryAction(CallbackData, prefix="lib"):
     value: str = ""
 
 
+class AccountAction(CallbackData, prefix="me"):
+    """Підтвердження імені й «Забути мене». Нове ім'я — у `reply_to_message`, а не тут:
+    кирилиця не влізе в 64 байти callback."""
+
+    # rename_yes · rename_no · forget_yes · forget_no
+    action: str
+
+
+def confirm(yes: str, no: str, prefix: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text=yes, callback_data=AccountAction(action=f"{prefix}_yes"))
+    builder.button(text=no, callback_data=AccountAction(action=f"{prefix}_no"))
+    builder.adjust(2)
+    return builder.as_markup()
+
+
 def _places(
     builder: InlineKeyboardBuilder, graph: PlaceGraph, data: Callable[[str], CallbackData]
 ) -> list[int]:

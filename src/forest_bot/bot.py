@@ -16,7 +16,7 @@ from forest_bot import db, jobs, startup, texts
 from forest_bot.access import Access, invite_code, invite_link, on_invite, on_membership
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
-from forest_bot.handlers import library, questions, stats, upload
+from forest_bot.handlers import account, library, questions, stats, upload
 from forest_bot.health import heartbeat_loop
 from forest_bot.ingest.archive import import_archive
 from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
@@ -54,6 +54,7 @@ def build_dispatcher(
     dp.include_router(core)
     dp.include_router(library.build_router())
     dp.include_router(stats.build_router())
+    dp.include_router(account.build_router())
     dp.include_router(upload.build_router())
     dp.include_router(questions.build_router())
     return dp
@@ -104,6 +105,8 @@ COMMANDS = [
     BotCommand(command="unanswered", description="Питання без відповіді"),
     BotCommand(command="wrong", description="Відповіді з позначкою «Хибно»"),
     BotCommand(command="stats", description="Ліс у числах"),
+    BotCommand(command="rename", description="Змінити ім'я"),
+    BotCommand(command="forget", description="Забути мене"),
     BotCommand(command="invite", description="Запросити сусіда"),
 ]
 

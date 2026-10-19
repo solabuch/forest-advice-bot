@@ -1,14 +1,16 @@
-"""Звірі: членство (D-54) і справжні імена (R-06, D-29, D-34, D-44)."""
+"""Звірі: членство (D-54), справжні імена (R-06, D-29, D-34, D-44) і «Забути мене» (D-51)."""
 
 import re
 from collections.abc import Iterable
 from datetime import UTC, datetime
 
-from sqlalchemy import exists, select
+from sqlalchemy import delete, exists, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from forest_bot.models import JoinedVia, User
+from forest_bot.models import Chunk, JoinedVia, Subscription, Upload, UploadStatus, User
+from forest_bot.repo import documents
+from forest_bot.repo.uploads import ACTIVE
 
 NAME_MIN, NAME_MAX = 2, 60
 # Літери будь-якої абетки, пробіл, дефіс, апостроф: «Зайчик Сірий», «Мишка-шкряботушка»
@@ -66,13 +68,46 @@ async def admit(session: AsyncSession, user_id: int, via: JoinedVia) -> User:
     return user
 
 
-async def set_name(session: AsyncSession, user: User, raw: str) -> str:
-    """Задає чи змінює справжнє ім'я (D-29); зайняте іншим звіром → NameTakenError (D-44)."""
+async def check_name(session: AsyncSession, user_id: int, raw: str) -> str:
+    """Чисте ім'я, якщо його можна взяти; зайняте іншим звіром → NameTakenError (D-44)."""
     name = clean_name(raw)
-    key = name_key(name)
-    owner = await session.scalar(select(User.id).where(User.name_key == key))
-    if owner is not None and owner != user.id:
+    owner = await session.scalar(select(User.id).where(User.name_key == name_key(name)))
+    if owner is not None and owner != user_id:
         raise NameTakenError(f"Ім'я «{name}» уже має інший звір — додай слово, що тебе розрізнить")
-    user.real_name, user.name_key = name, key
+    return name
+
+
+async def set_name(session: AsyncSession, user: User, raw: str) -> str:
+    """Задає чи змінює справжнє ім'я (D-29): нове одразу видно в підписах усіх документів."""
+    name = await check_name(session, user.id, raw)
+    user.real_name, user.name_key = name, name_key(name)
     await session.flush()
     return name
+
+
+async def forget(session: AsyncSession, user_id: int) -> int:
+    """«Забути мене» (D-51): ім'я, підписки, документи; замінені ними варіанти знову діють.
+
+    Членство лишається — питати можна й далі. Рядки документів лишаються в історії (D-13),
+    бо на них посилаються інші версії лінії, але текст і фрагменти зникають. Повертає,
+    скільки документів видалено.
+    """
+    user = await session.get_one(User, user_id, with_for_update=True)
+    # Чернетки в роботі — скасувати. Індексація перевіряє стан під блокуванням чернетки,
+    # тож документ, що саме індексується, або встигне (і видалиться нижче), або ні
+    await session.execute(
+        update(Upload)
+        .where(Upload.user_id == user_id, Upload.status.in_(ACTIVE))
+        .values(status=UploadStatus.CANCELLED)
+    )
+    await session.execute(update(Upload).where(Upload.user_id == user_id).values(parsed=None))
+    own = await documents.of_user(session, user_id)
+    # Новіші першими: кожне видалення повертає попередній варіант (D-43)
+    for document in own:
+        await documents.delete(session, document.id, user_id)
+    if own:
+        await session.execute(delete(Chunk).where(Chunk.document_id.in_([d.id for d in own])))
+    await session.execute(delete(Subscription).where(Subscription.user_id == user_id))
+    user.real_name = user.name_key = None
+    await session.flush()
+    return len(own)

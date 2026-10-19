@@ -110,11 +110,18 @@ async def _set_name(message: Message, pipeline: UploadPipeline, user_id: int, te
             # Зайняте ім'я — попросимо розрізнювальне слово (D-44)
             await message.answer(str(error))
             return
-        for upload in await upload_repo.with_status(session, user.id, UploadStatus.NEEDS_NAME):
-            upload.status = UploadStatus.QUEUED
-            await jobs.enqueue(session, PREPARE, {"upload_id": upload.id})
+        await release_waiting(session, user.id)
     pipeline.wake()
     await message.answer(texts.NAME_SAVED.format(name=name))
+
+
+async def release_waiting(session: AsyncSession, user_id: int) -> int:
+    """Звір назвався — документи, що чекали на ім'я, ідуть у розбір (D-34)."""
+    waiting = await upload_repo.with_status(session, user_id, UploadStatus.NEEDS_NAME)
+    for upload in waiting:
+        upload.status = UploadStatus.QUEUED
+        await jobs.enqueue(session, PREPARE, {"upload_id": upload.id})
+    return len(waiting)
 
 
 async def _set_title(
