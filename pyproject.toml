@@ -109,6 +109,8 @@ markers = [
 [tool.coverage.run]
 branch = true
 source = ["forest_bot"]
+# Асинхронний SQLAlchemy працює через greenlet — без цього coverage губить рядки після await
+concurrency = ["greenlet", "thread"]
 
 [tool.uv]
 # та сама версія, що в CI й pre-commit: формат uv.lock не «гуляє»

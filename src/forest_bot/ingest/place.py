@@ -29,6 +29,8 @@ QUOTED_SIMILARITY = 0.8
 
 _SENTENCE = re.compile(r"(?<=[.!?…])\s+")
 _QUOTED = re.compile(r"«([^»]{2,40})»")
+# Рукавичка, названа явно: «мешканці рукавички «Під кленом»» — навіть якщо такої немає
+_NAMED_MITTEN = re.compile(r"\bрукавич\w*\s+«([^»]{2,40})»", re.IGNORECASE)
 # Частини — за основою в будь-якому відмінку: «хвойного лісу», «у листяному лісі»
 _PARTS = {
     "coniferous": re.compile(r"\bхвойн\w*", re.IGNORECASE),
@@ -56,6 +58,8 @@ class PlaceDecision:
     # Кілька різних місць в одній фразі адресата — просимо розділити документ (R-16)
     several: tuple[str, ...] = ()
     confidence: float = 1.0
+    # Документ звернений до рукавички, якої немає в places.yaml, — називаємо її автору (D-21)
+    unknown: str | None = None
 
 
 def _mitten_by_name(name: str, graph: PlaceGraph) -> str | None:
@@ -109,6 +113,14 @@ def addressee(text: str, graph: PlaceGraph) -> tuple[str | None, tuple[str, ...]
     return None, ()
 
 
+def unknown_mitten(text: str, graph: PlaceGraph) -> str | None:
+    """Назва рукавички з тексту, якої немає серед місць: «рукавички «Під кленом»» → «Під кленом»."""
+    for match in _NAMED_MITTEN.finditer(text):
+        if _mitten_by_name(match.group(1), graph) is None:
+            return match.group(1).strip()
+    return None
+
+
 def _opening(document: ParsedDocument, limit: int) -> str:
     """Перші абзаци без заголовків: саме там адресат."""
     parts, size = [], 0
@@ -126,12 +138,16 @@ async def detect_place(
     document: ParsedDocument, graph: PlaceGraph, llm: GroqClient | None = None
 ) -> PlaceDecision:
     """Фраза адресата в першому абзаці → у назві → LLM → питаємо автора."""
-    for text in (_opening(document, OPENING_CHARS), document.title or ""):
+    opening = _opening(document, OPENING_CHARS)
+    for text in (opening, document.title or ""):
         place, several = addressee(text, graph)
         if place:
             return PlaceDecision(place, "phrase")
         if several:
             return PlaceDecision(None, "ask", several=several)
+    # Незнайома рукавичка названа прямо — LLM могла б «виправити» її на схожу, тож питаємо
+    if unknown := unknown_mitten(f"{document.title or ''}\n{opening}", graph):
+        return PlaceDecision(None, "ask", confidence=0.0, unknown=unknown)
     if llm is None:
         return PlaceDecision(None, "ask", confidence=0.0)
 

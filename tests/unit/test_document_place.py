@@ -131,6 +131,21 @@ async def test_without_llm_asks(graph: PlaceGraph) -> None:
     assert (decision.place_id, decision.how) == (None, "ask")
 
 
+async def test_unknown_mitten_is_named_without_llm(graph: PlaceGraph) -> None:
+    # Рукавички «Під кленом» немає в places.yaml — не віддаємо LLM, щоб та не «виправила» на схожу
+    llm = groq({"place_id": "pid-dubom", "confidence": 0.95})
+    decision = await detect_place(
+        document("Шановні мешканці рукавички «Під кленом»! Листя згрібаємо в суботу."), graph, llm
+    )
+    await llm.aclose()
+    assert (decision.place_id, decision.unknown) == (None, "Під кленом")
+
+
+def test_misread_mitten_is_not_unknown(graph: PlaceGraph) -> None:
+    # OCR-описка у відомій назві — це та сама рукавичка, а не нова
+    assert addressee("Мешканці рукавички «У еоснах», увага!", graph) == ("u-sosnakh", ())
+
+
 async def test_whole_archive_without_llm(graph: PlaceGraph) -> None:
     # Ціль ADR-16: 78/78 за фразою адресата, без жодного виклику LLM
     if shutil.which("tesseract") is None:
