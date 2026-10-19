@@ -14,6 +14,8 @@ from aiogram.methods import (
     AnswerCallbackQuery,
     EditMessageReplyMarkup,
     GetFile,
+    GetMe,
+    LeaveChat,
     SendChatAction,
     SendDocument,
     SendMessage,
@@ -83,6 +85,10 @@ class FakeBotApi(BaseSession):
             )
         if isinstance(method, AnswerCallbackQuery | EditMessageReplyMarkup | SendChatAction):
             return True
+        if isinstance(method, LeaveChat):
+            return True
+        if isinstance(method, GetMe):
+            return User(id=1, is_bot=True, first_name="Ліс", username="forest_test_bot")
         raise NotImplementedError(type(method).__name__)
 
     async def stream_content(
@@ -118,7 +124,9 @@ class Forest:
                 INDEX: lambda p: self.pipeline.index(int(p["upload_id"])),
             },
         )
-        self.dp = build_dispatcher(pipeline=self.pipeline, settings=make_settings())
+        self.dp = build_dispatcher(
+            sessions=sessions, settings=make_settings(), pipeline=self.pipeline
+        )
         self.sessions = sessions
         self.update_id = 0
         self.user = User(id=ZAYCHYK, is_bot=False, first_name="Зайчик")

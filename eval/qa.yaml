@@ -1,0 +1,383 @@
+# Питання → відповідь (S-08): еталон, пастки архіву, місця, «не знайшов», нові документи.
+#
+#   question  — як пише звір
+#   places    — які місця бот має зрозуміти з питання; [] — питає кнопками (D-06)
+#   sources   — файли, які мають бути серед джерел відповіді
+#   first     — джерело, що має йти першим (конкретне перед загальним, R-24)
+#   facts     — що має бути у відповіді; «а | б» — будь-що з варіантів; порівняння без регістру
+#   absent    — чого у відповіді бути не повинно (про що не питали, старий варіант)
+#   found     — false: доречної поради немає, бот чесно каже «не знайшов» (D-08)
+#   today     — дата для питань «сьогодні» (D-45); інакше — дата прогону з eval
+#   req       — вимоги, які перевіряє кейс
+#
+# Для кожної відповіді ще перевіряється автоматично: усі джерела — з доречних місць
+# (R-10, R-17, R-27) і чинних версій (R-15).
+
+today: 2026-10-21  # середа: день звіту Мишці
+
+cases:
+  # --- Еталон і числа ---
+  - id: fees-reference
+    req: [R-13, D-48, D-49]
+    question: Скільки внесок під дубом і до якого числа?
+    places: [pid-dubom]
+    sources: [Членські внески рукавички Під дубом.txt]
+    facts: [4 жолуд, 10 числа, Кабан, 2 лісові горіх]
+    absent: [поросят, пташенят]
+
+  - id: fees-family
+    req: [D-46]
+    question: Скільки жолудів за місяць платить під дубом родина з трьох дорослих і поросяти?
+    places: [pid-dubom]
+    sources: [Членські внески рукавички Під дубом.txt]
+    facts: ["12"]
+
+  - id: fees-exception
+    req: [D-49]
+    question: Чи платить внесок поросятко під дубом?
+    places: [pid-dubom]
+    sources: [Членські внески рукавички Під дубом.txt]
+    facts: [до року, не плат]
+
+  - id: fees-anthill
+    req: [D-48]
+    question: Скільки внесок біля мурашника і кому його здавати?
+    places: [bilia-murashnyka]
+    sources: [Членські внески рукавички Біля мурашника.pdf]
+    facts: [5 ягід горобини, 20 числа, Лисичц]
+
+  - id: fees-anthill-substitute
+    req: [D-49]
+    question: Чим ще можна заплатити внесок біля мурашника?
+    places: [bilia-murashnyka]
+    sources: [Членські внески рукавички Біля мурашника.pdf]
+    facts: [камін, 1 камінець | один камінець]
+
+  - id: fees-edge
+    req: [D-48]
+    question: Як часто платити внесок на узліссі?
+    places: [na-uzlissi]
+    sources: [Членські внески рукавички На узліссі.docx]
+    facts: [щотижня | щоп'ятниці | п'ятниц, колос]
+
+  - id: fees-willow
+    req: [D-48, D-49]
+    question: До якого числа здавати внески під вербою і кому їх нести взимку?
+    places: [pid-verboiu]
+    sources: [Членські внески рукавички Під вербою.pdf]
+    facts: [25 числа, Качк]
+
+  - id: fees-pines-scan
+    req: [R-22]
+    question: Скільки внесок у соснах?
+    places: [u-sosnakh]
+    sources: [Членські внески рукавички У соснах.pdf]
+    facts: [2 соснові шишки]
+
+  # --- Імена ---
+  - id: osmd-willow-head
+    req: [D-48]
+    question: Хто голова ОСМД під вербою?
+    places: [pid-verboiu]
+    sources: [Статут ОСМД Під вербою.docx]
+    facts: [Качка]
+
+  - id: osmd-oak-treasurer
+    req: [D-48]
+    question: Хто скарбник під дубом?
+    places: [pid-dubom]
+    sources: [Статут ОСМД Під дубом.txt]
+    facts: [Кабан]
+
+  - id: osmd-spruce-meeting
+    req: [D-48]
+    question: Коли збори мешканців під ялиною?
+    places: [pid-yalynoiu]
+    sources: [Статут ОСМД Під ялиною.docx]
+    facts: [понеділ, зранку]
+
+  - id: osmd-hazel-residents
+    req: [D-48]
+    question: Хто живе в рукавичці у ліщині?
+    places: [u-lishchyni]
+    sources: [Статут ОСМД У ліщині.docx]
+    facts: [Ведмід, Сорок, Вивірк]
+
+  # --- Правила рукавичок ---
+  - id: rules-oak-quiet
+    req: [D-48]
+    question: Коли в рукавичці під дубом має бути тиша?
+    places: [pid-dubom]
+    sources: [Правила співжиття в рукавичці Під дубом.txt]
+    facts: [полудня, заходу сонця]
+
+  - id: rules-spruce-guests
+    req: [D-48]
+    question: Скільки ночей можуть ночувати гості під ялиною?
+    places: [pid-yalynoiu]
+    sources: [Правила співжиття в рукавичці Під ялиною.docx]
+    facts: [трьох | 3 ночі | три ночі]
+
+  - id: rules-hazel-winter-guests
+    req: [D-49]
+    question: Чи можна приймати гостей у ліщині взимку?
+    places: [u-lishchyni]
+    sources: [Правила співжиття в рукавичці У ліщині.docx]
+    facts: [не прийма | не можна | ні]
+
+  - id: rules-pines-guests
+    req: [D-48]
+    question: Кого попереджати про гостей у соснах і коли?
+    places: [u-sosnakh]
+    sources: [Правила співжиття в рукавичці У соснах.pdf]
+    facts: [Синиц, за день]
+
+  # --- Області: частина й ліс ---
+  - id: dangers-conifer-part
+    req: [R-17]
+    question: Які небезпеки в хвойному лісі?
+    places: [coniferous]
+    sources: [Небезпеки хвойного лісу.txt]
+    facts: [живиц, олією, мурашник, хво]
+
+  - id: dangers-oak
+    req: [R-10]
+    question: Які небезпеки поруч із рукавичкою під дубом?
+    places: [pid-dubom]
+    sources: [Небезпеки поруч із рукавичкою Під дубом.txt]
+    facts: [ям, 30 кроків, мисливц, яструб]
+
+  - id: dangers-river-part
+    req: [R-17]
+    question: Що небезпечного біля річки?
+    places: [river]
+    sources: [Небезпеки біля річки.txt]
+    facts: [два дні, щук]
+
+  - id: dangers-edge-dogs
+    req: [D-48]
+    question: Коли біля узлісся бігають собаки з села?
+    places: [na-uzlissi]
+    sources: [Небезпеки поруч із рукавичкою На узліссі.txt]
+    facts: [вечері | ввечері | увечері]
+
+  - id: fire-whole-forest
+    req: [R-27]
+    question: Що робити при пожежі у всьому лісі?
+    places: [forest]
+    sources: [Що робити при пожежі.txt]
+    facts: [річки, проти вітру, бобрової греблі]
+
+  - id: hunters-dogs-forest
+    req: [R-27]
+    question: Що робити, коли чуєш мисливських собак? Порада для всього лісу.
+    places: [forest]
+    sources: ["Як кричати, коли бачиш мисливців.pdf"]
+    facts: [дерев, вод]
+
+  - id: map-edge-parts
+    req: [R-14]
+    question: До якої частини лісу належить рукавичка на узліссі?
+    places: [na-uzlissi]
+    sources: [Карта лісу.pdf]
+    facts: [жодн | ні до | не належить]
+
+  # --- Однаковий рівень, різні поради (D-03) і конкретне перед загальним (R-24) ---
+  - id: mushrooms-willow-when
+    req: [D-03, R-21]
+    question: Коли йти по гриби під вербою?
+    places: [pid-verboiu]
+    sources: [Грибний путівник біля річки.pdf, Грибний путівник листяного лісу.pdf]
+    facts: [наступного дня, 4–5 | 4-5]
+
+  - id: mushrooms-willow-what
+    req: [R-11]
+    question: Які гриби ростуть під вербою?
+    places: [pid-verboiu]
+    sources: [Чим поживитись поруч із рукавичкою Під вербою.txt]
+    first: Чим поживитись поруч із рукавичкою Під вербою.txt
+    facts: [опеньк]
+
+  - id: mushrooms-poison-edge
+    req: [R-10]
+    question: Як відрізнити бліду поганку від сироїжки на узліссі?
+    places: [na-uzlissi]
+    sources: [Їстівне й отруйне.pdf]
+    facts: [кільц, бульб]
+
+  - id: warm-pines-specific-first
+    req: [R-24]
+    question: Коли утеплювати рукавичку у соснах?
+    places: [u-sosnakh]
+    sources: [Як утеплити рукавичку в хвойному лісі.pdf]
+    first: Як утеплити рукавичку в хвойному лісі.pdf
+    facts: [жовтн]
+
+  - id: warm-hazel
+    req: [R-11]
+    question: Чим утеплити рукавичку в ліщині?
+    places: [u-lishchyni]
+    sources: [Як утеплити рукавичку в листяному лісі.docx]
+    facts: [дубов, дві лапи]
+
+  - id: warm-edge-no-part
+    req: [R-10, R-14]
+    question: Коли утеплювати рукавичку на узліссі?
+    places: [na-uzlissi]
+    sources: [Календар сезонів.txt]
+    facts: [листопад]
+    absent: [жовтн, мох]
+
+  - id: acorns-oak-specific-first
+    req: [R-24]
+    question: Коли збирати жолуді під дубом?
+    places: [pid-dubom]
+    sources: [Чим поживитись поруч із рукавичкою Під дубом.pdf]
+    first: Чим поживитись поруч із рукавичкою Під дубом.pdf
+    facts: [першого морозу]
+
+  # --- Їжа ---
+  - id: food-edge
+    req: [R-10]
+    question: Що можна їсти на узліссі?
+    places: [na-uzlissi]
+    sources: [Чим поживитись поруч із рукавичкою На узліссі.txt]
+    facts: [колоск, яблук]
+
+  - id: food-river-fry
+    req: [D-48]
+    question: Коли біля річки ловити мальків?
+    places: [river]
+    sources: [Що їсти біля річки.txt]
+    facts: [вранці]
+
+  - id: raspberry-expired
+    req: [D-47]
+    question: Чи знайду зараз малину біля рукавички у ліщині?
+    places: [u-lishchyni]
+    sources: [Чим поживитись поруч із рукавичкою У ліщині.docx]
+    facts: [середини серпня, минув | минула | уже не | вже не | закінч | пізно | не знайдеш]
+
+  - id: seeds-conifer
+    req: [D-48]
+    question: Коли найбільше насіння з шишок у хвойному лісі?
+    places: [coniferous]
+    sources: [Що їсти в хвойному лісі.txt]
+    facts: [лют]
+
+  # --- Сьогодні (D-45) ---
+  - id: ford-tuesday
+    req: [D-45]
+    today: 2026-10-20
+    question: Чи можна сьогодні перейти брід вище греблі біля річки?
+    places: [river]
+    sources: [Броди і коли бобри відкривають греблю.pdf]
+    facts: [спал]
+
+  - id: ford-wednesday
+    req: [D-45]
+    today: 2026-10-21
+    question: Чи можна сьогодні перейти брід вище греблі біля річки?
+    places: [river]
+    sources: [Броди і коли бобри відкривають греблю.pdf]
+    facts: [вівтор, п'ятниц, не можна | не ходи | не ходіть | закрит | не відкрит | небезпечн]
+
+  - id: ford-dam-never
+    req: [R-24]
+    question: Чи можна перейти річку вбрід біля бобрової греблі?
+    places: [bilia-bobrovoi-hrebli]
+    sources: [Стежки до сусідів від рукавички Біля бобрової греблі.txt]
+    first: Стежки до сусідів від рукавички Біля бобрової греблі.txt
+    facts: [ніколи]
+
+  # --- Стежки ---
+  - id: path-oak-spruce
+    req: [D-48, D-49]
+    question: Як дійти з рукавички під дубом до ялини?
+    places: [pid-dubom]
+    sources: [Стежки до сусідів від рукавички Під дубом.txt]
+    facts: [400 кроків, просік, субот]
+
+  - id: path-edge-oak
+    req: [D-49]
+    question: Як дійти з узлісся до дуба?
+    places: [na-uzlissi]
+    sources: [Стежки до сусідів від рукавички На узліссі.docx]
+    facts: [лісом, пол]
+
+  # --- Кілька місць (D-35) ---
+  - id: multi-fees
+    req: [D-35]
+    question: Скільки внесок під дубом і біля мурашника?
+    places: [pid-dubom, bilia-murashnyka]
+    sources: [Членські внески рукавички Під дубом.txt, Членські внески рукавички Біля мурашника.pdf]
+    facts: [4 жолуд, 5 ягід]
+
+  # --- Місце в питанні (D-55, D-06) ---
+  - id: place-alias
+    req: [D-55]
+    question: Скільки внесок у Дубовій?
+    places: [pid-dubom]
+    sources: [Членські внески рукавички Під дубом.txt]
+    facts: [4 жолуд]
+
+  - id: place-typo
+    req: [D-55]
+    question: Хто голова ОСМД в лішині?
+    places: [u-lishchyni]
+    sources: [Статут ОСМД У ліщині.docx]
+    facts: [Ведмід]
+
+  - id: place-missing
+    req: [D-06]
+    question: Скільки внесок?
+    places: []
+
+  - id: place-unknown
+    req: [D-06, D-55]
+    question: Скільки внесок під кленом?
+    places: []
+
+  # --- Не знайшов (D-08) ---
+  - id: not-found-plane
+    req: [D-08]
+    question: Скільки коштує квиток на літак під дубом?
+    places: [pid-dubom]
+    found: false
+
+  - id: not-found-storks
+    req: [D-08]
+    question: Коли прилітають лелеки в хвойний ліс?
+    places: [coniferous]
+    found: false
+
+  - id: not-found-edge
+    req: [D-08]
+    question: Де на узліссі зимують лелеки?
+    places: [na-uzlissi]
+    found: false
+
+# Після того як звірі надіслали документи (R-15, R-12): новий варіант замінює архівний
+after_uploads:
+  uploads:
+    - file: examples/Членські внески рукавички Під дубом (новий варіант).txt
+      sender: Сова
+      replaces: Членські внески рукавички Під дубом.txt
+    - file: examples/Chanterelles near the anthill.txt
+      sender: Їжак
+  cases:
+    - id: other-language
+      req: [D-30]
+      question: Коли збирати лисички біля мурашника?
+      places: [bilia-murashnyka]
+      sources: [Chanterelles near the anthill.txt]
+      facts: [два дні | 2 дні | двох днів | 2 дн, "надіслано: Їжак"]
+      absent: [chanterelle, rain]
+
+    - id: new-version-replaces-old
+      req: [R-15, R-12]
+      question: Скільки внесок під дубом і до якого числа?
+      places: [pid-dubom]
+      sources: [Членські внески рукавички Під дубом (новий варіант).txt]
+      facts: [5 жолуд, 15 числа, "надіслано: Сова"]
+      absent: [4 жолуді, 10 числа]

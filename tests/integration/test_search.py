@@ -107,6 +107,13 @@ async def test_words_in_other_case_are_found(forest: AsyncSession) -> None:
     assert [(p.title, p.keyword) for p in found] == [("Внески", True)]
 
 
+async def test_words_of_the_title_are_found(forest: AsyncSession) -> None:
+    # «Небезпеки» — лише в назві, у тексті фрагментів — яма й яструб
+    await add(forest, "pid-dubom", "Небезпеки поруч", ["Яма за 30 кроків."], vector=axis(1))
+    found = await find(forest, "pid-dubom", "Які небезпеки?")
+    assert [(p.title, p.keyword) for p in found] == [("Небезпеки поруч", True)]
+
+
 async def test_far_and_wordless_is_not_found(forest: AsyncSession) -> None:
     await add(forest, "pid-dubom", "Стежки", ["Стежка до річки."], vector=axis(2))
     assert await find(forest, "pid-dubom", "Скільки коштує квиток?") == []
