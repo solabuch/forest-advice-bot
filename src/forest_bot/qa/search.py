@@ -91,8 +91,9 @@ def keyword_query(question: str) -> str | None:
             continue
         if len(token) < 3:
             continue
+        # Не довше 5 літер: дієслова міняють суфікс — «утеплювати» / «утеплюють» / «утепліть»
         floor = 3 if len(token) <= 5 else 4
-        prefix = token[: max(floor, min(len(stem(token)), len(token) - 2))]
+        prefix = token[: max(floor, min(len(stem(token)), len(token) - 2, 5))]
         terms.append(f"{prefix}:*")
     unique = list(dict.fromkeys(terms))
     return " | ".join(unique) if unique else None
@@ -143,12 +144,17 @@ async def search(
     matched: list[int] = []
     if tsquery := keyword_query(question):
         query = func.to_tsquery("simple", tsquery)
-        rank = func.ts_rank_cd(Chunk.tsv, query)
+        # Слова назви й розділу теж шукаються: «Небезпеки», «Статут» часто є лише в назві.
+        # Без індексу — області місця кілька десятків фрагментів
+        words = Chunk.tsv.op("||")(
+            func.to_tsvector("simple", func.concat_ws(" ", Document.title, Chunk.section))
+        )
+        rank = func.ts_rank_cd(words, query)
         matched = list(
             await session.scalars(
                 select(Chunk.id)
                 .join(Document, Document.id == Chunk.document_id)
-                .where(*in_scope, Chunk.tsv.op("@@")(query))
+                .where(*in_scope, words.op("@@")(query))
                 .order_by(rank.desc(), Chunk.id)
                 .limit(CANDIDATES)
             )
