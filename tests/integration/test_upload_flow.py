@@ -194,6 +194,7 @@ async def forest(sessions: Sessions) -> Forest:
 
 
 async def test_first_document_asks_name_then_indexes(forest: Forest) -> None:
+    # R-01, R-06, D-34: перший документ → ім'я один раз → «Готово» (R-20)
     await forest.send_file("внески.txt", FEES)
     assert forest.replies() == [texts.ASK_NAME]
     assert (await forest.upload()).status is UploadStatus.NEEDS_NAME
@@ -208,6 +209,7 @@ async def test_first_document_asks_name_then_indexes(forest: Forest) -> None:
 
 
 async def test_photo_is_not_a_document(forest: Forest) -> None:
+    # R-05: поради — лише документами, не фото
     photo = [PhotoSize(file_id="p", file_unique_id="p", width=10, height=10)]
     await forest.feed(message=forest.message(photo=photo))
     assert forest.replies() == [texts.PHOTO_NOT_ACCEPTED]
@@ -219,11 +221,13 @@ async def test_unsupported_format(forest: Forest) -> None:
 
 
 async def test_file_over_limit_is_explained(forest: Forest) -> None:
+    # D-16: понад 20 МБ — бот одразу пояснює ліміт
     await forest.send_file("путівник.pdf", b"%PDF", size=25 * 1024 * 1024)
     assert forest.replies() == [texts.TOO_BIG.format(limit=20)]
 
 
 async def test_refusing_name_cancels_document(forest: Forest) -> None:
+    # D-34: без справжнього імені документ не приймається
     await forest.send_file("внески.txt", FEES)
     await forest.press(UploadAction(id=0, action="refuse_name"))
     assert forest.replies()[-1] == texts.NAME_REFUSED
@@ -231,6 +235,7 @@ async def test_refusing_name_cancels_document(forest: Forest) -> None:
 
 
 async def test_place_chosen_with_button(forest: Forest) -> None:
+    # R-08: місце незрозуміле → перепитати кнопками, не вгадувати
     await forest.send_file("горіхи.txt", "Горіхи\n\nГоріхи збирайте, коли самі падають.".encode())
     await forest.say("Білка")
     await forest.work()
@@ -313,6 +318,7 @@ async def test_invalid_name_is_asked_again(forest: Forest) -> None:
 
 
 async def test_hourly_limit(forest: Forest, monkeypatch: pytest.MonkeyPatch) -> None:
+    # D-19: ліміт документів від одного звіра за годину
     forest.dp.workflow_data["settings"] = make_settings(uploads_per_hour=1)
     await forest.send_file("перший.txt", FEES)
     await forest.send_file("другий.txt", FEES + b" ")

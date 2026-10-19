@@ -95,6 +95,7 @@ async def run_index_jobs(pipeline: UploadPipeline) -> None:
 
 
 async def test_document_is_indexed_and_author_told(pipeline: UploadPipeline) -> None:
+    # R-20: автор дізнається, що документ уже шукається
     upload_id = await upload(pipeline, FEES, "внески.txt")
     await pipeline.prepare(upload_id)
     draft = await state(pipeline, upload_id)
@@ -143,6 +144,7 @@ async def test_unreadable_file_is_explained(pipeline: UploadPipeline) -> None:
 
 
 async def test_unclear_place_asks_author(pipeline: UploadPipeline) -> None:
+    # R-08: місце не вгадуємо — питаємо автора
     text = "Горіхи\n\nГоріхи збирайте, коли самі падають. Не трусіть гілок.".encode()
     upload_id = await upload(pipeline, text, "горіхи.txt")
     await pipeline.prepare(upload_id)
@@ -175,6 +177,7 @@ async def test_unknown_mitten_is_named(pipeline: UploadPipeline) -> None:
 
 
 async def test_several_places_ask_to_split(pipeline: UploadPipeline) -> None:
+    # R-07, R-16: одне місце на документ — інакше розділити
     text = "Внески\n\nДля мешканців рукавичок «Під дубом» і «У ліщині». Внесок — 4 жолуді.".encode()
     upload_id = await upload(pipeline, text, "внески.txt")
     await pipeline.prepare(upload_id)
@@ -223,6 +226,7 @@ async def test_new_version_asks_and_notifies_previous_author(pipeline: UploadPip
 
 
 async def test_batch_ends_with_summary(pipeline: UploadPipeline) -> None:
+    # D-53: кілька документів — по черзі, наприкінці підсумок
     nuts = "Горіхи\n\nДля мешканців рукавички «У ліщині». Горіхи — у вересні.".encode()
     ids = [
         await upload(pipeline, FEES, "внески.txt", batch="album-1"),

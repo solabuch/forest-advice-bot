@@ -64,6 +64,8 @@ check = ["lint", "types", "test"]
 up = "docker compose up --build"
 db = "docker compose -f compose.yaml -f compose.dev.yaml up -d --wait db"
 model = "python scripts/fetch_model.py .data/models/multilingual-e5-small"
+trace = "python scripts/trace.py"
+eval = "python scripts/eval_qa.py"
 
 [tool.ruff]
 line-length = 100

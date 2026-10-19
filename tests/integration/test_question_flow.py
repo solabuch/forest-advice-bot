@@ -85,6 +85,7 @@ async def asking(sessions: Sessions) -> Asking:
 
 
 async def test_answer_has_signature_and_buttons(asking: Asking) -> None:
+    # R-01, R-02, R-09: питання звичайним текстом → відповідь із документом-джерелом
     await asking.ask("Скільки внесок під дубом?")
     assert asking.last().text.endswith(SIGNED)
     assert asking.buttons() == ["📄 Членські внески", texts.USEFUL, texts.WRONG]
@@ -93,6 +94,7 @@ async def test_answer_has_signature_and_buttons(asking: Asking) -> None:
 
 
 async def test_no_place_asks_with_buttons_then_answers(asking: Asking) -> None:
+    # R-18: місця того, хто питає, бот не підставляє — питає кнопками
     await asking.ask("Скільки внесок?")
     assert asking.last().text == texts.ASK_QUESTION_PLACE
     assert "«Під дубом»" in asking.buttons()
@@ -125,6 +127,7 @@ async def test_wrong_answer_goes_to_review(asking: Asking) -> None:
 
 
 async def test_source_button_sends_the_file(asking: Asking) -> None:
+    # R-04: документ доступний кожному, хто питає
     # Тести працюють в окремій теці — шлях до знімка архіву абсолютний
     asking.dp.workflow_data["settings"] = make_settings(archive_dir=ARCHIVE)
     async with asking.sessions.begin() as session:

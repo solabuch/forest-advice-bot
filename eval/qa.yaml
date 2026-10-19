@@ -367,7 +367,7 @@ after_uploads:
       sender: Їжак
   cases:
     - id: other-language
-      req: [D-30]
+      req: [D-30, R-26]
       question: Коли збирати лисички біля мурашника?
       places: [bilia-murashnyka]
       sources: [Chanterelles near the anthill.txt]

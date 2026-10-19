@@ -66,6 +66,7 @@ async def places(sessions: Sessions) -> None:
 
 @pytest.mark.usefixtures("places")
 async def test_first_start_imports_with_places(sessions: Sessions, folder: Path) -> None:
+    # R-19: архів у боті з першого старту, без Диска
     stats = await import_archive(sessions, folder, FakeEmbedder(), GRAPH)
     assert (stats.added, stats.updated, stats.unchanged, stats.skipped) == (3, 0, 0, [])
     docs = await current(sessions)
