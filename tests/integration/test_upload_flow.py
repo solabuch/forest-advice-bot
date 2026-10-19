@@ -14,6 +14,8 @@ from aiogram.methods import (
     AnswerCallbackQuery,
     EditMessageReplyMarkup,
     GetFile,
+    SendChatAction,
+    SendDocument,
     SendMessage,
     TelegramMethod,
 )
@@ -68,18 +70,18 @@ class FakeBotApi(BaseSession):
         timeout: int | None = None,  # noqa: ASYNC109
     ) -> Any:
         self.calls.append(method)
-        if isinstance(method, SendMessage):
+        if isinstance(method, SendMessage | SendDocument):
             return Message(
                 message_id=len(self.calls),
                 date=datetime.now(UTC),
                 chat=Chat(id=int(method.chat_id), type="private"),
-                text=method.text,
+                text=method.text if isinstance(method, SendMessage) else None,
             )
         if isinstance(method, GetFile):
             return File(
                 file_id=method.file_id, file_unique_id=method.file_id, file_path=method.file_id
             )
-        if isinstance(method, AnswerCallbackQuery | EditMessageReplyMarkup):
+        if isinstance(method, AnswerCallbackQuery | EditMessageReplyMarkup | SendChatAction):
             return True
         raise NotImplementedError(type(method).__name__)
 

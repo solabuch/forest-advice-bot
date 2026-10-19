@@ -125,9 +125,14 @@ class Answerer:
         question: str,
         place_ids: Sequence[str] | None = None,
         *,
+        previous: str = "",
         on_wait: Callable[[float], Awaitable[None]] | None = None,
     ) -> Reply:
-        """Відповідь на питання; `place_ids` — коли місце вже обрано кнопкою чи з контексту."""
+        """Відповідь на питання; `place_ids` — коли місце вже обрано кнопкою чи з контексту.
+
+        `previous` — попереднє питання, коли це уточнення без місця (D-24): «а до якого
+        числа?» саме нічого не знайде, тож шукаємо за обома, а моделі даємо обидва окремо.
+        """
         started = time.monotonic()
         if place_ids is None:
             found = await detect_places(question, self.graph, self.llm)
@@ -136,10 +141,11 @@ class Answerer:
             place_ids = found.place_ids
         else:
             found = find_places(question, self.graph)
-        rest = found.rest
+        searched = f"{previous} {question}" if previous else question
+        rest = find_places(searched, self.graph).rest
         # Питання цілком і без назв місць — див. qa/search.py
-        vectors = [(await self.embedder.aembed_query(question)).tolist()]
-        if rest and rest != question:
+        vectors = [(await self.embedder.aembed_query(searched)).tolist()]
+        if rest and rest != searched:
             vectors.append((await self.embedder.aembed_query(rest)).tolist())
 
         completions: list[Completion] = []
@@ -151,7 +157,9 @@ class Answerer:
                     session, vectors, rest, scope(place_id, self.graph), self.graph
                 )
                 asked = focus(question, found, place_id)
-                answers.append(await self._answer(asked, place, passages, completions, on_wait))
+                answers.append(
+                    await self._answer(asked, previous, place, passages, completions, on_wait)
+                )
             text = self._compose(answers)
             parts = [part for answer in answers for part in answer.parts]
             answered = bool(parts)
@@ -195,6 +203,7 @@ class Answerer:
     async def _answer(
         self,
         question: str,
+        previous: str,
         place: Place,
         passages: list[Passage],
         completions: list[Completion],
@@ -214,7 +223,7 @@ class Answerer:
         ]
         today = self.clock().astimezone(self.timezone).date()
         answer, completion = await self.llm.complete_json(
-            answer_messages(question, fragments, today, place_label(place, self.graph)),
+            answer_messages(question, fragments, today, place_label(place, self.graph), previous),
             Answer,
             max_tokens=ANSWER_MAX_TOKENS,
             temperature=0.1,
