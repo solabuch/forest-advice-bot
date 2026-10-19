@@ -79,6 +79,8 @@ class Settings(DatabaseSettings):
     embedding_model_dir: Path = Path(".data/models/multilingual-e5-small")
     # Знімок «Лісового архіву» з маніфестом; в образі — /app/data/archive
     archive_dir: Path = Path("data/archive")
+    # Файли, підтягнуті з Диска після збірки образу (D-40); в образі — том /data/drive
+    drive_dir: Path = Path("data/drive")
 
     @field_validator("telegram_bot_token", "groq_api_key", mode="before")
     @classmethod
@@ -127,6 +129,13 @@ class Settings(DatabaseSettings):
     @property
     def timezone(self) -> ZoneInfo:
         return ZoneInfo(self.bot_timezone)
+
+    def archive_file(self, storage_path: str) -> Path:
+        """Де лежить файл архівного документа: у знімку чи серед підтягнутих з Диска."""
+        drive, _, name = storage_path.partition("/")
+        if drive == "drive" and name:
+            return self.drive_dir / name
+        return self.archive_dir / storage_path
 
     def secret_values(self) -> list[str]:
         """Значення, які треба маскувати в логах."""

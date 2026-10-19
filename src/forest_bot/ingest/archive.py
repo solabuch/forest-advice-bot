@@ -33,6 +33,8 @@ from forest_bot.repo.documents import FileInfo
 logger = logging.getLogger(__name__)
 
 MANIFEST = "manifest.json"
+# Файли, які синхронізація завантажила з Диска, лежать не в знімку, а в томі (DRIVE_DIR)
+DRIVE_PREFIX = "drive/"
 # OCR сканів — у зовнішньому процесі, тож два документи паралельно справді швидші
 PARALLEL = 2
 
@@ -73,8 +75,8 @@ def read_manifest(folder: Path) -> list[ArchiveEntry]:
     ]
 
 
-async def _known(session: AsyncSession) -> dict[str, Document]:
-    """Остання архівна версія кожного файлу Диска."""
+async def known_files(session: AsyncSession) -> dict[str, Document]:
+    """Остання архівна версія кожного файлу Диска — і зі знімка, і з синхронізації."""
     rows = await session.scalars(
         select(Document)
         .where(Document.source == DocumentSource.ARCHIVE)
@@ -82,6 +84,19 @@ async def _known(session: AsyncSession) -> dict[str, Document]:
         .ext(distinct_on(Document.archive_file_id))
     )
     return {doc.archive_file_id: doc for doc in rows if doc.archive_file_id}
+
+
+def _snapshot_is_newer(entry: ArchiveEntry, known: Document | None) -> bool:
+    """Файл знімка імпортуємо, якщо його ще немає або знімок оновили (новий образ).
+
+    Версію, яку вже підтягнула синхронізація з Диска, і файл, що зник із теки, знімок
+    не перекриває: інакше кожен рестарт відкочував би архів до стану на момент збірки.
+    """
+    if known is None:
+        return True
+    if known.deleted_at is not None or (known.storage_path or "").startswith(DRIVE_PREFIX):
+        return False
+    return known.file_sha256 != entry.sha256
 
 
 async def import_archive(
@@ -95,8 +110,8 @@ async def import_archive(
     stats = ImportStats()
     entries = read_manifest(folder)
     async with sessions() as session:
-        known = await _known(session)
-    todo = [e for e in entries if e.id not in known or known[e.id].file_sha256 != e.sha256]
+        known = await known_files(session)
+    todo = [e for e in entries if _snapshot_is_newer(e, known.get(e.id))]
     stats.unchanged = len(entries) - len(todo)
 
     slots = asyncio.Semaphore(PARALLEL)
@@ -117,7 +132,7 @@ async def import_archive(
             return
         async with writing:
             previous = known.get(entry.id)
-            await _write(sessions, entry, parsed, decision.place_id, previous, embedder, graph)
+            await write_entry(sessions, entry, parsed, decision.place_id, previous, embedder, graph)
             if previous:
                 stats.updated += 1
             else:
@@ -151,7 +166,7 @@ async def import_archive(
     return stats
 
 
-async def _write(
+async def write_entry(
     sessions: async_sessionmaker[AsyncSession],
     entry: ArchiveEntry,
     parsed: ParsedDocument,

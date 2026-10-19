@@ -14,11 +14,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from forest_bot import db, jobs, startup, texts
 from forest_bot.access import Access, invite_code, invite_link, on_invite, on_membership
+from forest_bot.archive.drive import DriveClient
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
 from forest_bot.handlers import account, library, questions, stats, subscriptions, upload
 from forest_bot.health import heartbeat_loop
 from forest_bot.ingest.archive import import_archive
+from forest_bot.ingest.sync import ARCHIVE_SYNC, DriveSync
 from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
 from forest_bot.llm.client import GroqClient
 from forest_bot.llm.profiles import DEFAULT_CHAIN
@@ -115,7 +117,8 @@ COMMANDS = [
 
 
 async def run(settings: Settings) -> int:
-    """Самоперевірка → черга задач (імпорт архіву) → полінг. Повертає код виходу.
+    """Самоперевірка → черга задач (імпорт знімка, синхронізація з Диском) → полінг.
+    Повертає код виходу.
 
     ROLE=all — усе в одному процесі; bot — лише полінг; worker — лише черга.
     """
@@ -147,8 +150,26 @@ async def run(settings: Settings) -> int:
         await pipeline.index(int(str(payload["upload_id"])))
 
     notifier = Notifier(sessions, BotMessenger(bot), graph, settings.timezone)
+    drive = DriveClient()
+    sync = DriveSync(
+        sessions,
+        drive,
+        settings.archive_folder_id,
+        settings.drive_dir,
+        embedder,
+        graph,
+        llm,
+        interval=settings.archive_sync_interval,
+    )
     worker = jobs.Worker(
-        sessions, {ARCHIVE_IMPORT: archive, PREPARE: prepare, INDEX: index, NOTIFY: notifier}
+        sessions,
+        {
+            ARCHIVE_IMPORT: archive,
+            ARCHIVE_SYNC: sync,
+            PREPARE: prepare,
+            INDEX: index,
+            NOTIFY: notifier,
+        },
     )
     pipeline.wake = worker.wake
     background = [asyncio.create_task(heartbeat_loop())]
@@ -157,6 +178,9 @@ async def run(settings: Settings) -> int:
         async with sessions.begin() as session:
             if not await jobs.has_pending(session, ARCHIVE_IMPORT):
                 await jobs.enqueue(session, ARCHIVE_IMPORT)
+            # Потім — Диск: нове й змінене після збірки образу; далі сама себе планує (D-40)
+            if not await jobs.has_pending(session, ARCHIVE_SYNC):
+                await jobs.enqueue(session, ARCHIVE_SYNC)
         background.append(asyncio.create_task(worker.run()))
 
     try:
@@ -196,6 +220,7 @@ async def run(settings: Settings) -> int:
             with contextlib.suppress(asyncio.CancelledError):
                 await task
         await bot.session.close()
+        await drive.aclose()
         await llm.aclose()
         await engine.dispose()
     return 0
