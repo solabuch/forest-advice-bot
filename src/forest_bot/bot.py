@@ -8,39 +8,41 @@ import time
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramConflictError
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 from aiogram.types import InlineKeyboardMarkup, Message
 
-from forest_bot import db, jobs, startup
+from forest_bot import db, jobs, startup, texts
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
-from forest_bot.handlers import upload
+from forest_bot.handlers import questions, upload
 from forest_bot.health import heartbeat_loop
 from forest_bot.ingest.archive import import_archive
 from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
 from forest_bot.llm.client import GroqClient
 from forest_bot.llm.profiles import DEFAULT_CHAIN
 from forest_bot.places import load_places
+from forest_bot.qa.answer import Answerer
 from forest_bot.repo.places import sync_places
 
 logger = logging.getLogger(__name__)
 
 
 async def on_start(message: Message) -> None:
-    # Тимчасове привітання; повний онбординг — разом із UX-діалогами
-    await message.answer(
-        "Привіт! Я бот порад для звірів лісу. Скоро вмітиму відповідати на питання."
-    )
+    await message.answer(texts.START)
 
 
 def build_dispatcher(**dependencies: object) -> Dispatcher:
-    """Залежності (конвеєр, налаштування) хендлери отримують аргументами за назвою."""
+    """Залежності (конвеєр, відповідач, налаштування) хендлери отримують аргументами за
+    назвою. Порядок роутерів важливий: текст спершу перевіряє роутер завантажень — він
+    чекає ім'я чи назву, — а все інше йде як питання."""
     dp = Dispatcher()
     dp.workflow_data.update(dependencies)
     core = Router(name="core")
     core.message.register(on_start, CommandStart())
+    core.message.register(on_start, Command("help"))
     dp.include_router(core)
     dp.include_router(upload.build_router())
+    dp.include_router(questions.build_router())
     return dp
 
 
@@ -137,7 +139,14 @@ async def run(settings: Settings) -> int:
             return 2
         me = await bot.get_me()
         logger.info("Бот @%s готовий за %.1f с", me.username, time.monotonic() - started)
-        await build_dispatcher(pipeline=pipeline, settings=settings).start_polling(bot)
+        answerer = Answerer(sessions, embedder, graph, llm, settings.timezone)
+        dispatcher = build_dispatcher(
+            pipeline=pipeline,
+            settings=settings,
+            answerer=answerer,
+            memory=questions.DialogMemory(),
+        )
+        await dispatcher.start_polling(bot)
     finally:
         for task in background:
             task.cancel()
