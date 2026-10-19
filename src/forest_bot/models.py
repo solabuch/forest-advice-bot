@@ -244,12 +244,6 @@ class Chunk(Base):
             postgresql_ops={"embedding": "vector_cosine_ops"},
         ),
         Index("ix_chunks_tsv", "tsv", postgresql_using="gin"),
-        Index(
-            "ix_chunks_text_trgm",
-            "text",
-            postgresql_using="gin",
-            postgresql_ops={"text": "gin_trgm_ops"},
-        ),
     )
 
 
