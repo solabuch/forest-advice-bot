@@ -95,6 +95,7 @@ async def test_invitation_link_admits(gate: Gate) -> None:
 
 
 async def test_member_gets_a_link_that_can_be_forwarded(gate: Gate) -> None:
+    # R-03: запрошує будь-який мешканець — адмінів немає
     await gate.say("/start")
     await gate.say("/invite")
     sent = gate.api.sent()[-1]

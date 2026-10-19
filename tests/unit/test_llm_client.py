@@ -144,6 +144,7 @@ async def test_failure_falls_back_to_next_model(
 async def test_rate_limited_model_is_skipped_until_retry_after(
     make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
 ) -> None:
+    # D-23: ліміт однієї моделі → наступна в ланцюжку
     client, fake = make_client({BIG: [error(429, **{"retry-after": "30"}), ok()], QWEN: [ok()]})
     await client.complete(MESSAGES)
     await client.complete([{"role": "user", "content": "Інше питання"}])
@@ -207,6 +208,7 @@ async def test_waits_for_nearest_model(
 async def test_long_wait_warns_once(
     make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
 ) -> None:
+    # R-20, D-23: затримка через ліміти — попередження один раз
     client, _ = make_client(
         {
             BIG: [error(429, **{"retry-after": "12"}), ok()],
@@ -258,6 +260,7 @@ async def test_too_large_for_every_model(
 async def test_identical_request_is_cached(
     make_client: Callable[..., tuple[GroqClient, FakeGroq]],
 ) -> None:
+    # D-23: однакові питання — з кешу
     client, fake = make_client({BIG: [ok()], QWEN: [ok()]})
     first = await client.complete(MESSAGES)
     second = await client.complete(MESSAGES)

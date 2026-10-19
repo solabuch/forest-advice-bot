@@ -41,6 +41,7 @@ async def archive_fees(session: AsyncSession) -> Document:
 
 @pytest.mark.usefixtures("forest")
 async def test_version_lifecycle(session: AsyncSession) -> None:
+    # N-05: новіший підтверджений варіант замінює старий, історія лишається
     archived = await archive_fees(session)
 
     # Кабан надсилає нові внески: схожа назва, те саме місце → кандидат на заміну (D-37)
