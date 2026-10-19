@@ -1,6 +1,7 @@
 """Звірі: членство (D-54) і справжні імена (R-06, D-29, D-34, D-44)."""
 
 import re
+from collections.abc import Iterable
 from datetime import UTC, datetime
 
 from sqlalchemy import exists, select
@@ -39,6 +40,17 @@ def name_key(name: str) -> str:
 async def get_or_create(session: AsyncSession, user_id: int) -> User:
     await session.execute(insert(User).values(id=user_id).on_conflict_do_nothing())
     return await session.get_one(User, user_id)
+
+
+async def names(session: AsyncSession, user_ids: Iterable[int | None]) -> dict[int, str]:
+    """Справжні імена авторів — для підпису «надіслано: Ім'я, дата» (R-12)."""
+    ids = {i for i in user_ids if i is not None}
+    if not ids:
+        return {}
+    rows = await session.execute(
+        select(User.id, User.real_name).where(User.id.in_(ids), User.real_name.is_not(None))
+    )
+    return {user_id: name for user_id, name in rows if name}
 
 
 async def has_members(session: AsyncSession) -> bool:

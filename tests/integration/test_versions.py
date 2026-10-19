@@ -70,7 +70,7 @@ async def test_version_lifecycle(session: AsyncSession) -> None:
     assert await documents.archive_version_changed(session, "drive-1", "c" * 64)
 
     # Чуже й архівне видаляти не можна (D-05)
-    with pytest.raises(DocumentError, match="лише документ, який надіслав ти"):
+    with pytest.raises(DocumentError, match="лише свій документ"):
         await documents.delete(session, new.id, ZAYCHYK)
     with pytest.raises(DocumentError, match="Лісового архіву"):
         await documents.delete(session, archived.id, KABAN)
