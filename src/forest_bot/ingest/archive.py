@@ -20,6 +20,7 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from forest_bot import notify
 from forest_bot.ingest.index import PassageEmbedder, index_document
 from forest_bot.ingest.parse import ParsedDocument, ParseError, parse
 from forest_bot.ingest.place import detect_place
@@ -176,4 +177,5 @@ async def _write(
             ),
             lineage_id=previous.lineage_id if previous else None,
         )
-        await index_document(session, document, parsed, embedder, graph)
+        replaced = await index_document(session, document, parsed, embedder, graph)
+        await notify.enqueue(session, document, replaced=replaced is not None)

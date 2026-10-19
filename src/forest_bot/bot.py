@@ -16,12 +16,13 @@ from forest_bot import db, jobs, startup, texts
 from forest_bot.access import Access, invite_code, invite_link, on_invite, on_membership
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
-from forest_bot.handlers import account, library, questions, stats, upload
+from forest_bot.handlers import account, library, questions, stats, subscriptions, upload
 from forest_bot.health import heartbeat_loop
 from forest_bot.ingest.archive import import_archive
 from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
 from forest_bot.llm.client import GroqClient
 from forest_bot.llm.profiles import DEFAULT_CHAIN
+from forest_bot.notify import NOTIFY, Notifier
 from forest_bot.places import load_places
 from forest_bot.qa.answer import Answerer
 from forest_bot.repo import users
@@ -54,6 +55,7 @@ def build_dispatcher(
     dp.include_router(core)
     dp.include_router(library.build_router())
     dp.include_router(stats.build_router())
+    dp.include_router(subscriptions.build_router())
     dp.include_router(account.build_router())
     dp.include_router(upload.build_router())
     dp.include_router(questions.build_router())
@@ -102,6 +104,7 @@ COMMANDS = [
     BotCommand(command="places", description="Місця лісу"),
     BotCommand(command="docs", description="Документи місця"),
     BotCommand(command="my", description="Мої документи"),
+    BotCommand(command="subscribe", description="Підписка на нові поради місця"),
     BotCommand(command="unanswered", description="Питання без відповіді"),
     BotCommand(command="wrong", description="Відповіді з позначкою «Хибно»"),
     BotCommand(command="stats", description="Ліс у числах"),
@@ -143,7 +146,10 @@ async def run(settings: Settings) -> int:
     async def index(payload: dict[str, object]) -> None:
         await pipeline.index(int(str(payload["upload_id"])))
 
-    worker = jobs.Worker(sessions, {ARCHIVE_IMPORT: archive, PREPARE: prepare, INDEX: index})
+    notifier = Notifier(sessions, BotMessenger(bot), graph, settings.timezone)
+    worker = jobs.Worker(
+        sessions, {ARCHIVE_IMPORT: archive, PREPARE: prepare, INDEX: index, NOTIFY: notifier}
+    )
     pipeline.wake = worker.wake
     background = [asyncio.create_task(heartbeat_loop())]
     if settings.role in ("all", "worker"):

@@ -8,7 +8,7 @@ from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from forest_bot import texts
-from forest_bot.places import PlaceGraph, PlaceKind
+from forest_bot.places import Place, PlaceGraph, PlaceKind
 
 
 class UploadAction(CallbackData, prefix="up"):
@@ -53,18 +53,66 @@ def confirm(yes: str, no: str, prefix: str) -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+class SubscribeAction(CallbackData, prefix="sub"):
+    """Підписка на місце (D-26): місце — у самій кнопці."""
+
+    # toggle · off
+    action: str
+    value: str
+
+
+def _label(place: Place) -> str:
+    return f"«{place.name}»" if place.kind is PlaceKind.MITTEN else place.name
+
+
 def _places(
-    builder: InlineKeyboardBuilder, graph: PlaceGraph, data: Callable[[str], CallbackData]
+    builder: InlineKeyboardBuilder,
+    graph: PlaceGraph,
+    data: Callable[[str], CallbackData],
+    label: Callable[[Place], str] = _label,
 ) -> list[int]:
     """Ліс, частини, рукавички (D-06, R-08) — звір обирає сам; повертає розкладку рядків."""
-    builder.button(text=graph.forest.name, callback_data=data(graph.forest.id))
+    builder.button(text=label(graph.forest), callback_data=data(graph.forest.id))
     parts = graph.of_kind(PlaceKind.PART)
     for place in parts:
-        builder.button(text=place.name, callback_data=data(place.id))
+        builder.button(text=label(place), callback_data=data(place.id))
     mittens = graph.of_kind(PlaceKind.MITTEN)
     for place in mittens:
-        builder.button(text=f"«{place.name}»", callback_data=data(place.id))
+        builder.button(text=label(place), callback_data=data(place.id))
     return [1, len(parts), *([2] * (len(mittens) // 2 + len(mittens) % 2))]
+
+
+def subscriptions(graph: PlaceGraph, subscribed: set[str]) -> InlineKeyboardMarkup:
+    """Усі місця; ✅ — підписка є, повторне натискання відписує."""
+    builder = InlineKeyboardBuilder()
+
+    def label(place: Place) -> str:
+        text = _label(place)
+        return texts.SUBSCRIBED_MARK.format(label=text) if place.id in subscribed else text
+
+    rows = _places(
+        builder, graph, lambda place_id: SubscribeAction(action="toggle", value=place_id), label
+    )
+    builder.adjust(*rows)
+    return builder.as_markup()
+
+
+def notice_actions(
+    document_id: int, title: str, places: Sequence[tuple[str, str]]
+) -> InlineKeyboardMarkup:
+    """Під сповіщенням: сам документ (D-28) і відписка однією кнопкою (D-26)."""
+    builder = InlineKeyboardBuilder()
+    builder.button(
+        text=texts.DOCUMENT_BUTTON.format(title=title[:40]),
+        callback_data=AskAction(action="doc", id=document_id),
+    )
+    for place_id, citation in places:
+        builder.button(
+            text=texts.UNSUBSCRIBE_BUTTON.format(place=citation),
+            callback_data=SubscribeAction(action="off", value=place_id),
+        )
+    builder.adjust(1)
+    return builder.as_markup()
 
 
 def place_picker(upload_id: int, graph: PlaceGraph, action: str = "place") -> InlineKeyboardMarkup:

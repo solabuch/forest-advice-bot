@@ -20,7 +20,7 @@ from aiogram.types import InlineKeyboardMarkup
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from forest_bot import jobs, keyboards, texts
+from forest_bot import jobs, keyboards, notify, texts
 from forest_bot.ingest.index import PassageEmbedder, index_document
 from forest_bot.ingest.parse import ParsedDocument, ParseError, parse
 from forest_bot.ingest.place import detect_place
@@ -184,6 +184,7 @@ class UploadPipeline:
             )
             upload.status = UploadStatus.DONE
             upload.document_id = document.id
+            await notify.enqueue(session, document, replaced=previous is not None)
             text = texts.READY_REPLACED if previous else texts.READY
             await self.messenger.send(
                 upload.chat_id,

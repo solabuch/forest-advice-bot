@@ -16,9 +16,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from forest_bot import keyboards, texts
 from forest_bot.config import Settings
 from forest_bot.keyboards import LibraryAction
-from forest_bot.models import Document, DocumentSource, DocumentStatus
+from forest_bot.models import Document, DocumentStatus
 from forest_bot.places import PlaceGraph, PlaceKind
-from forest_bot.qa.render import split_message
+from forest_bot.qa.render import source_of, split_message
 from forest_bot.repo import documents, users
 from forest_bot.repo.documents import DocumentError
 
@@ -43,14 +43,6 @@ def _status(document: Document) -> str:
     if document.status is DocumentStatus.FAILED:
         return texts.STATUS_FAILED
     return texts.STATUS_REPLACED
-
-
-def source_of(document: Document, names: dict[int, str], timezone: ZoneInfo) -> str:
-    """«Лісовий архів» чи «надіслано: Ім'я, ДД.ММ.РРРР» — як у підписі відповіді (R-12)."""
-    if document.source is DocumentSource.ARCHIVE:
-        return texts.FROM_ARCHIVE
-    who = names.get(document.sender_id or 0, "звір")
-    return texts.SENT_BY.format(who=who, date=f"{document.sent_at.astimezone(timezone):%d.%m.%Y}")
 
 
 async def _answer_long(
