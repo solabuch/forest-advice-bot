@@ -33,6 +33,8 @@ INDEXED = {
     "Свято першого снігу.odt": ("forest", "Свято першого снігу"),
     "Розклад толоки в хвойному лісі.docx": ("coniferous", "Розклад толоки в хвойному лісі"),
     "Як ходити повз мурашник.md": ("bilia-murashnyka", "Як ходити повз мурашник"),
+    # D-30: документ іншою мовою; місце — за назвою рукавички в лапках
+    "Chanterelles near the anthill.txt": ("bilia-murashnyka", "Chanterelles near the anthill"),
 }
 NEW_VERSION = "Членські внески рукавички Під дубом (новий варіант).txt"
 NO_PLACE = "Як сушити гриби.txt"

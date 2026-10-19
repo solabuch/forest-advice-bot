@@ -22,7 +22,7 @@ from forest_bot.llm.prompts import Answer, Fragment, answer_messages
 from forest_bot.models import QaLog, Unanswered
 from forest_bot.places import Level, Place, PlaceGraph, PlaceKind
 from forest_bot.qa.places import detect_places, find_places, focus
-from forest_bot.qa.render import RenderedPart, compose, short_title
+from forest_bot.qa.render import RenderedPart, compose, order, short_title
 from forest_bot.qa.search import Passage, scope, search
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,8 @@ class Reply:
     qa_id: int | None = None
     # Місце не назване й не з'ясоване — бот питає кнопками (D-06)
     needs_place: bool = False
+    # Документи, які знайшов пошук (від найближчого), — для eval: hit@k
+    retrieved: tuple[int, ...] = ()
 
 
 @dataclass
@@ -150,18 +152,21 @@ class Answerer:
 
         completions: list[Completion] = []
         answers: list[_PlaceAnswer] = []
+        retrieved: list[int] = []
         async with self.sessions.begin() as session:
             for place_id in place_ids:
                 place = self.graph.get(place_id)
                 passages = await search(
                     session, vectors, rest, scope(place_id, self.graph), self.graph
                 )
+                retrieved.extend(p.document_id for p in passages)
                 asked = focus(question, found, place_id)
                 answers.append(
                     await self._answer(asked, previous, place, passages, completions, on_wait)
                 )
             text = self._compose(answers)
-            parts = [part for answer in answers for part in answer.parts]
+            # У порядку показу: конкретна порада першою (R-24) — так і кнопки джерел
+            parts = [part for answer in answers for part in order(answer.parts)]
             answered = bool(parts)
             for answer in answers:
                 if not answer.parts:
@@ -198,7 +203,14 @@ class Answerer:
             log.completion_tokens,
             log.latency_ms,
         )
-        return Reply(text, answered, tuple(place_ids), tuple(sources.values()), qa_id)
+        return Reply(
+            text,
+            answered,
+            tuple(place_ids),
+            tuple(sources.values()),
+            qa_id,
+            retrieved=tuple(dict.fromkeys(retrieved)),
+        )
 
     async def _answer(
         self,
