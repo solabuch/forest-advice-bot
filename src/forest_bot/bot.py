@@ -9,9 +9,11 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramConflictError
 from aiogram.filters import Command, CommandStart
-from aiogram.types import InlineKeyboardMarkup, Message
+from aiogram.types import BotCommand, InlineKeyboardMarkup, Message
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from forest_bot import db, jobs, startup, texts
+from forest_bot.access import Access, invite_code, invite_link, on_invite, on_membership
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
 from forest_bot.handlers import questions, upload
@@ -22,6 +24,7 @@ from forest_bot.llm.client import GroqClient
 from forest_bot.llm.profiles import DEFAULT_CHAIN
 from forest_bot.places import load_places
 from forest_bot.qa.answer import Answerer
+from forest_bot.repo import users
 from forest_bot.repo.places import sync_places
 
 logger = logging.getLogger(__name__)
@@ -31,15 +34,23 @@ async def on_start(message: Message) -> None:
     await message.answer(texts.START)
 
 
-def build_dispatcher(**dependencies: object) -> Dispatcher:
+def build_dispatcher(
+    *, sessions: async_sessionmaker[AsyncSession], settings: Settings, **dependencies: object
+) -> Dispatcher:
     """Залежності (конвеєр, відповідач, налаштування) хендлери отримують аргументами за
     назвою. Порядок роутерів важливий: текст спершу перевіряє роутер завантажень — він
     чекає ім'я чи назву, — а все інше йде як питання."""
     dp = Dispatcher()
-    dp.workflow_data.update(dependencies)
+    dp.workflow_data.update(sessions=sessions, settings=settings, **dependencies)
+    # Лише учасники й лише особисті чати (D-54, R-25) — до будь-якого хендлера
+    access = Access(sessions, settings)
+    dp.message.outer_middleware(access)
+    dp.callback_query.outer_middleware(access)
+    dp.my_chat_member.register(on_membership)
     core = Router(name="core")
     core.message.register(on_start, CommandStart())
     core.message.register(on_start, Command("help"))
+    core.message.register(on_invite, Command("invite"))
     dp.include_router(core)
     dp.include_router(upload.build_router())
     dp.include_router(questions.build_router())
@@ -83,6 +94,10 @@ async def _another_instance_running(bot: Bot) -> bool:
 
 
 ARCHIVE_IMPORT = "archive_import"
+COMMANDS = [
+    BotCommand(command="start", description="Як питати й надсилати поради"),
+    BotCommand(command="invite", description="Запросити сусіда"),
+]
 
 
 async def run(settings: Settings) -> int:
@@ -138,11 +153,20 @@ async def run(settings: Settings) -> int:
             logger.error("З цим токеном уже працює інший екземпляр бота — зупини його")
             return 2
         me = await bot.get_me()
+        async with sessions.begin() as session:
+            invite = await invite_code(session, settings)
+            fresh = not await users.has_members(session)
+        # Посилання — для того, хто запускає бота (ADR-17); код з налаштувань у лозі замасковано
+        logger.info("Запрошення: %s", invite_link(me.username or "", invite))
+        if fresh:
+            logger.info("Учасників ще немає: перший, хто напише боту, стане першим мешканцем")
+        await bot.set_my_commands(COMMANDS)
         logger.info("Бот @%s готовий за %.1f с", me.username, time.monotonic() - started)
         answerer = Answerer(sessions, embedder, graph, llm, settings.timezone)
         dispatcher = build_dispatcher(
-            pipeline=pipeline,
+            sessions=sessions,
             settings=settings,
+            pipeline=pipeline,
             answerer=answerer,
             memory=questions.DialogMemory(),
         )
