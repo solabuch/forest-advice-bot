@@ -4,15 +4,17 @@ import asyncio
 import contextlib
 import logging
 import time
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramConflictError
 from aiogram.filters import Command, CommandStart
-from aiogram.types import BotCommand, InlineKeyboardMarkup, Message
+from aiogram.types import BotCommand, InlineKeyboardMarkup, Message, TelegramObject, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from forest_bot import db, jobs, startup, texts
+from forest_bot import db, jobs, logs, startup, texts
 from forest_bot.access import Access, invite_code, invite_link, on_invite, on_membership
 from forest_bot.archive.drive import DriveClient
 from forest_bot.config import Settings
@@ -37,6 +39,17 @@ async def on_start(message: Message) -> None:
     await message.answer(texts.START)
 
 
+async def _log_context(
+    handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+    event: TelegramObject,
+    data: dict[str, Any],
+) -> Any:
+    """Номер апдейту в кожному записі логу, поки його обробляють (S-09)."""
+    label = f"upd {event.update_id}" if isinstance(event, Update) else "upd"
+    with logs.context(label):
+        return await handler(event, data)
+
+
 def build_dispatcher(
     *, sessions: async_sessionmaker[AsyncSession], settings: Settings, **dependencies: object
 ) -> Dispatcher:
@@ -45,6 +58,7 @@ def build_dispatcher(
     чекає ім'я чи назву, — а все інше йде як питання."""
     dp = Dispatcher()
     dp.workflow_data.update(sessions=sessions, settings=settings, **dependencies)
+    dp.update.outer_middleware(_log_context)
     # Лише учасники й лише особисті чати (D-54, R-25) — до будь-якого хендлера
     access = Access(sessions, settings)
     dp.message.outer_middleware(access)

@@ -4,7 +4,15 @@ import io
 import json
 import logging
 
-from forest_bot.logs import MASK, JsonFormatter, RedactingFormatter, redact
+from forest_bot.logs import (
+    MASK,
+    TEXT_FORMAT,
+    JsonFormatter,
+    RedactingFormatter,
+    context,
+    log_context,
+    redact,
+)
 from tests.factories import FAKE_GROQ_KEY, FAKE_TELEGRAM_TOKEN
 
 
@@ -48,3 +56,22 @@ def test_json_formatter() -> None:
     record = json.loads(stream.getvalue())
     assert record["level"] == "WARNING"
     assert record["msg"] == f"token {MASK}"
+
+
+def test_context_marks_records_and_is_reset() -> None:
+    logger, stream = _logger_with(RedactingFormatter("%(name)s%(ctx)s: %(message)s"))
+    with context("upd 812"):
+        logger.warning("питання")
+    logger.warning("поза апдейтом")
+    assert stream.getvalue().splitlines() == [
+        "test.RedactingFormatter [upd 812]: питання",
+        "test.RedactingFormatter: поза апдейтом",
+    ]
+    assert log_context.get() == ""
+
+
+def test_json_has_context() -> None:
+    logger, stream = _logger_with(JsonFormatter(TEXT_FORMAT))
+    with context("job 45 upload_index"):
+        logger.warning("готово")
+    assert json.loads(stream.getvalue())["ctx"] == "job 45 upload_index"

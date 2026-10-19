@@ -19,6 +19,7 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from forest_bot import logs
 from forest_bot.models import Job, JobStatus
 
 logger = logging.getLogger(__name__)
@@ -103,6 +104,11 @@ class Worker:
         if claimed is None:
             return False
         job_id, kind, payload, attempt = claimed
+        with logs.context(f"job {job_id} {kind}"):
+            await self._run(job_id, kind, payload, attempt)
+        return True
+
+    async def _run(self, job_id: int, kind: str, payload: dict[str, Any], attempt: int) -> None:
         handler = self._handlers.get(kind)
         try:
             if handler is None:
@@ -121,7 +127,6 @@ class Worker:
                 logger.warning("Задача %s #%d: %r — повтор за %.0f с", kind, job_id, error, delay)
         else:
             await self._finish(job_id, JobStatus.DONE, None)
-        return True
 
     async def _claim(self) -> tuple[int, str, dict[str, Any], int] | None:
         async with self._sessions.begin() as session:
