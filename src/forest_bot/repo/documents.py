@@ -152,7 +152,7 @@ async def delete(session: AsyncSession, document_id: int, user_id: int) -> Docum
     if document.source is DocumentSource.ARCHIVE:
         raise DocumentError("Документи з «Лісового архіву» через бота не видаляються")
     if document.sender_id != user_id:
-        raise DocumentError("Видалити можна лише документ, який надіслав ти")
+        raise DocumentError("Видалити можна лише свій документ")
 
     lineage = await _lock_lineage(session, document.lineage_id)
     was_current = document.is_current

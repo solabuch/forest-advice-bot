@@ -10,6 +10,7 @@ from typing import Any
 import pytest
 from aiogram import Bot
 from aiogram.client.session.base import BaseSession
+from aiogram.filters.callback_data import CallbackData
 from aiogram.methods import (
     AnswerCallbackQuery,
     EditMessageReplyMarkup,
@@ -125,7 +126,7 @@ class Forest:
             },
         )
         self.dp = build_dispatcher(
-            sessions=sessions, settings=make_settings(), pipeline=self.pipeline
+            sessions=sessions, settings=make_settings(), graph=GRAPH, pipeline=self.pipeline
         )
         self.sessions = sessions
         self.update_id = 0
@@ -157,7 +158,7 @@ class Forest:
     async def say(self, text: str) -> None:
         await self.feed(message=self.message(text=text))
 
-    async def press(self, data: UploadAction) -> None:
+    async def press(self, data: CallbackData) -> None:
         self.update_id += 1
         query = CallbackQuery(
             id=str(self.update_id),
