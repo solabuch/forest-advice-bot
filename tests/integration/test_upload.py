@@ -45,6 +45,11 @@ class FakeMessenger:
 
 @pytest.fixture
 async def pipeline(sessions: Sessions) -> UploadPipeline:
+    return await make_pipeline(sessions)
+
+
+async def make_pipeline(sessions: Sessions) -> UploadPipeline:
+    """Місця в БД, Кабан і Сова вже назвалися; Telegram і embeddings — фейкові."""
     async with sessions.begin() as session:
         await sync_places(session, GRAPH)
         for user_id, name in ((KABAN, "Кабан"), (SOVA, "Сова")):
