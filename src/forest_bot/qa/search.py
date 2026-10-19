@@ -21,7 +21,10 @@ from forest_bot.qa.places import normalize, stem
 # Reciprocal Rank Fusion: стандартна стала зі статті Cormack et al.
 RRF_K = 60
 CANDIDATES = 30
-MAX_DOCUMENTS = 5
+MAX_DOCUMENTS = 4
+# Усі уривки разом: ~1400 токенів. Ліміт Groq — 8000 токенів на хвилину на модель,
+# тож довший контекст — менше відповідей за хвилину (D-23)
+CONTEXT_CHARS = 4000
 # Документ, коротший за це, іде у відповідь цілком (≈ 700 токенів)
 WHOLE_DOCUMENT_CHARS = 2800
 # Нижче — фрагмент не про це; але збіг слів («Кабан», «4 жолуді») рятує і з нижчим
@@ -163,11 +166,17 @@ async def search(
     for chunk_id, document_id in hits:
         by_document.setdefault(document_id, []).append(chunk_id)
     ranked = sorted(by_document, key=lambda d: -max(scores[c] for c in by_document[d]))
-    top = ranked[:max_documents]
-    return [
-        await _passage(session, document_id, by_document[document_id], cosine, keyword, graph)
-        for document_id in top
-    ]
+    passages: list[Passage] = []
+    size = 0
+    for document_id in ranked[:max_documents]:
+        passage = await _passage(
+            session, document_id, by_document[document_id], cosine, keyword, graph
+        )
+        if passages and size + len(passage.text) > CONTEXT_CHARS:
+            break
+        passages.append(passage)
+        size += len(passage.text)
+    return passages
 
 
 async def _passage(

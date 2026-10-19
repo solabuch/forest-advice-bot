@@ -60,6 +60,8 @@ class QuestionPlaces:
     confidence: float = 1.0
     # Питання без назв місць — для пошуку за словами: «під дубом» не має шукати «дуб»
     rest: str = ""
+    # Де в питанні згадано місця: (місце, початок, кінець) — для `focus`
+    mentions: tuple[tuple[str, int, int], ...] = ()
 
 
 def normalize(text: str) -> str:
@@ -86,7 +88,8 @@ def _word_pattern(word: str, *, in_phrase: bool) -> str:
     return re.escape(base) + r"\w*"
 
 
-def _name_pattern(name: str, place: Place) -> str:
+def name_pattern(name: str, place: Place) -> str:
+    """Назва місця → регулярний вираз для нормалізованого тексту (див. `normalize`)."""
     words = _TOKEN.findall(normalize(name))
     if not words:
         return ""
@@ -109,7 +112,7 @@ def _gazetteer(graph: PlaceGraph) -> tuple[_Name, ...]:
         # «Ліс» одним словом — не назва: «у лісі» каже кожен, хто питає про будь-що
         variants = place.aliases if place.kind is PlaceKind.FOREST else (place.name, *place.aliases)
         for variant in variants:
-            if pattern := _name_pattern(variant, place):
+            if pattern := name_pattern(variant, place):
                 names.append(_Name(place.id, re.compile(rf"(?<!\w){pattern}")))
     names.append(_Name(graph.forest.id, re.compile(rf"(?<!\w)(?:{_FOREST})")))
     return tuple(names)
@@ -178,7 +181,31 @@ def find_places(question: str, graph: PlaceGraph) -> QuestionPlaces:
             ordered.append(place_id)
     rest = _strip(question, [(start, end) for start, end, _ in hits])
     places = tuple(_reduce(ordered, graph))
-    return QuestionPlaces(places, "name" if places else "none", 1.0 if places else 0.0, rest)
+    mentions = tuple((place_id, start, end) for start, end, place_id in sorted(hits))
+    how: How = "name" if places else "none"
+    return QuestionPlaces(places, how, 1.0 if places else 0.0, rest, mentions)
+
+
+_CONJUNCTION_AFTER = re.compile(r"^\s*,?\s*(?:і|й|та|чи|або|а також)\b")
+_CONJUNCTION_BEFORE = re.compile(r"(?:,|\b(?:і|й|та|чи|або|а також))\s*$")
+
+
+def focus(question: str, found: QuestionPlaces, place_id: str) -> str:
+    """Питання лише про одне з кількох місць (D-35): «Що їсти під дубом і в ліщині?» для
+    «У ліщині» → «Що їсти в ліщині?». Інакше модель відповідає не про те місце."""
+    if len(found.place_ids) < 2:
+        return question
+    others = [(s, e) for p, s, e in found.mentions if p in found.place_ids and p != place_id]
+    text = normalize(question)
+    spans = []
+    for start, end in others:
+        if after := _CONJUNCTION_AFTER.match(text[end:]):
+            end += after.end()
+        elif before := _CONJUNCTION_BEFORE.search(text[:start]):
+            start = before.start()
+        spans.append((start, end))
+    focused = _strip(question, spans)
+    return re.sub(r"\s+([?!.,])", r"\1", focused)
 
 
 async def detect_places(question: str, graph: PlaceGraph, llm: GroqClient | None) -> QuestionPlaces:
@@ -196,4 +223,4 @@ async def detect_places(question: str, graph: PlaceGraph, llm: GroqClient | None
     guess = resolve_place(guess, graph)
     if guess.place_id and guess.confidence >= LLM_MIN_CONFIDENCE:
         return QuestionPlaces((guess.place_id,), "llm", guess.confidence, found.rest)
-    return QuestionPlaces((), "none", guess.confidence, found.rest)
+    return QuestionPlaces((), "none", guess.confidence, found.rest, found.mentions)
