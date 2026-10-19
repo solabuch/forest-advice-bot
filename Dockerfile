@@ -49,6 +49,10 @@ ENV PATH="/opt/venv/bin:${PATH}" \
 WORKDIR /app
 # Знімок архіву: бот знає його з першого старту, навіть без доступу до Drive (D-40)
 COPY data/archive ./data/archive
+# Eval і приклади в образі: якість можна перевірити без uv (README, «Якість»)
+COPY --chown=app:app eval/qa.yaml ./eval/qa.yaml
+COPY scripts/eval_qa.py ./scripts/eval_qa.py
+COPY examples ./examples
 USER app
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

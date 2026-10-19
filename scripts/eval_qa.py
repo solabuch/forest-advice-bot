@@ -6,7 +6,7 @@
 
     uv run python scripts/eval_qa.py                # усі кейси
     uv run python scripts/eval_qa.py fees-reference # лише ці
-    docker compose run --rm --entrypoint python app scripts/eval_qa.py
+    docker compose run --rm --entrypoint python app scripts/eval_qa.py  # без uv; підсумок — у вивід
 
 Один прогін — ~50 відповідей, ~150 тис. токенів Groq, тобто чверть добового ліміту
 трьох моделей: не запускати на кожен коміт (у CI — лише вручну).
