@@ -227,7 +227,7 @@ async def _send_document(
         await bot.send_message(chat_id, texts.DOCUMENT_GONE)
         return
     if document.storage_path:
-        path = settings.archive_dir / document.storage_path
+        path = settings.archive_file(document.storage_path)
         if path.is_file():
             await bot.send_document(chat_id, FSInputFile(path, filename=document.file_name))
             return

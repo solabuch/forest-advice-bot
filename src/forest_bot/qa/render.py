@@ -9,7 +9,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
-from forest_bot.models import DocumentSource
+from forest_bot import texts
+from forest_bot.models import Document, DocumentSource
 from forest_bot.places import Place, PlaceGraph, PlaceKind
 from forest_bot.qa.places import name_pattern
 from forest_bot.qa.search import Passage
@@ -62,6 +63,15 @@ def signature(passage: Passage, graph: PlaceGraph, timezone: ZoneInfo) -> str:
         sender = passage.sender or "звір"
         text += f" (надіслано: {sender}, {passage.sent_at.astimezone(timezone):%d.%m.%Y})"
     return text
+
+
+def source_of(document: Document, names: dict[int, str], timezone: ZoneInfo) -> str:
+    """Джерело документа поза відповіддю: «Лісовий архів» чи «надіслано: Ім'я, ДД.ММ.РРРР»
+    — як у підписі (R-12)."""
+    if document.source is DocumentSource.ARCHIVE:
+        return texts.FROM_ARCHIVE
+    who = names.get(document.sender_id or 0, "звір")
+    return texts.SENT_BY.format(who=who, date=f"{document.sent_at.astimezone(timezone):%d.%m.%Y}")
 
 
 def order(parts: Sequence[RenderedPart]) -> list[RenderedPart]:

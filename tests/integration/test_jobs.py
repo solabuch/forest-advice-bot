@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from forest_bot import jobs
 from forest_bot.jobs import MAX_ATTEMPTS, PermanentJobError, Worker
+from forest_bot.logs import log_context
 from forest_bot.models import Job, JobStatus
 
 pytestmark = pytest.mark.integration
@@ -28,15 +29,19 @@ async def load(sessions: Sessions, job_id: int) -> Job:
 
 async def test_job_runs_once_and_is_done(sessions: Sessions) -> None:
     seen: list[dict[str, Any]] = []
+    labels: list[str] = []
 
     async def echo(payload: dict[str, Any]) -> None:
         seen.append(payload)
+        labels.append(log_context.get())
 
     job_id = await add(sessions, document_id=7)
     worker = Worker(sessions, {"echo": echo})
     assert await worker.run_once() is True
     assert await worker.run_once() is False
     assert seen == [{"document_id": 7}]
+    # Усі записи задачі в лозі — з її номером
+    assert labels == [f"job {job_id} echo"]
     job = await load(sessions, job_id)
     assert (job.status, job.attempts, job.locked_at) == (JobStatus.DONE, 1, None)
 

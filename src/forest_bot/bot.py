@@ -4,24 +4,29 @@ import asyncio
 import contextlib
 import logging
 import time
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.exceptions import TelegramConflictError
 from aiogram.filters import Command, CommandStart
-from aiogram.types import BotCommand, InlineKeyboardMarkup, Message
+from aiogram.types import BotCommand, InlineKeyboardMarkup, Message, TelegramObject, Update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from forest_bot import db, jobs, startup, texts
+from forest_bot import db, jobs, logs, startup, texts
 from forest_bot.access import Access, invite_code, invite_link, on_invite, on_membership
+from forest_bot.archive.drive import DriveClient
 from forest_bot.config import Settings
 from forest_bot.embeddings import load_embedder
-from forest_bot.handlers import account, library, questions, stats, upload
+from forest_bot.handlers import account, library, questions, stats, subscriptions, upload
 from forest_bot.health import heartbeat_loop
 from forest_bot.ingest.archive import import_archive
+from forest_bot.ingest.sync import ARCHIVE_SYNC, DriveSync
 from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
 from forest_bot.llm.client import GroqClient
 from forest_bot.llm.profiles import DEFAULT_CHAIN
+from forest_bot.notify import NOTIFY, Notifier
 from forest_bot.places import load_places
 from forest_bot.qa.answer import Answerer
 from forest_bot.repo import users
@@ -34,6 +39,17 @@ async def on_start(message: Message) -> None:
     await message.answer(texts.START)
 
 
+async def _log_context(
+    handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+    event: TelegramObject,
+    data: dict[str, Any],
+) -> Any:
+    """Номер апдейту в кожному записі логу, поки його обробляють (S-09)."""
+    label = f"upd {event.update_id}" if isinstance(event, Update) else "upd"
+    with logs.context(label):
+        return await handler(event, data)
+
+
 def build_dispatcher(
     *, sessions: async_sessionmaker[AsyncSession], settings: Settings, **dependencies: object
 ) -> Dispatcher:
@@ -42,6 +58,7 @@ def build_dispatcher(
     чекає ім'я чи назву, — а все інше йде як питання."""
     dp = Dispatcher()
     dp.workflow_data.update(sessions=sessions, settings=settings, **dependencies)
+    dp.update.outer_middleware(_log_context)
     # Лише учасники й лише особисті чати (D-54, R-25) — до будь-якого хендлера
     access = Access(sessions, settings)
     dp.message.outer_middleware(access)
@@ -54,6 +71,7 @@ def build_dispatcher(
     dp.include_router(core)
     dp.include_router(library.build_router())
     dp.include_router(stats.build_router())
+    dp.include_router(subscriptions.build_router())
     dp.include_router(account.build_router())
     dp.include_router(upload.build_router())
     dp.include_router(questions.build_router())
@@ -102,6 +120,7 @@ COMMANDS = [
     BotCommand(command="places", description="Місця лісу"),
     BotCommand(command="docs", description="Документи місця"),
     BotCommand(command="my", description="Мої документи"),
+    BotCommand(command="subscribe", description="Підписка на нові поради місця"),
     BotCommand(command="unanswered", description="Питання без відповіді"),
     BotCommand(command="wrong", description="Відповіді з позначкою «Хибно»"),
     BotCommand(command="stats", description="Ліс у числах"),
@@ -112,7 +131,8 @@ COMMANDS = [
 
 
 async def run(settings: Settings) -> int:
-    """Самоперевірка → черга задач (імпорт архіву) → полінг. Повертає код виходу.
+    """Самоперевірка → черга задач (імпорт знімка, синхронізація з Диском) → полінг.
+    Повертає код виходу.
 
     ROLE=all — усе в одному процесі; bot — лише полінг; worker — лише черга.
     """
@@ -143,7 +163,28 @@ async def run(settings: Settings) -> int:
     async def index(payload: dict[str, object]) -> None:
         await pipeline.index(int(str(payload["upload_id"])))
 
-    worker = jobs.Worker(sessions, {ARCHIVE_IMPORT: archive, PREPARE: prepare, INDEX: index})
+    notifier = Notifier(sessions, BotMessenger(bot), graph, settings.timezone)
+    drive = DriveClient()
+    sync = DriveSync(
+        sessions,
+        drive,
+        settings.archive_folder_id,
+        settings.drive_dir,
+        embedder,
+        graph,
+        llm,
+        interval=settings.archive_sync_interval,
+    )
+    worker = jobs.Worker(
+        sessions,
+        {
+            ARCHIVE_IMPORT: archive,
+            ARCHIVE_SYNC: sync,
+            PREPARE: prepare,
+            INDEX: index,
+            NOTIFY: notifier,
+        },
+    )
     pipeline.wake = worker.wake
     background = [asyncio.create_task(heartbeat_loop())]
     if settings.role in ("all", "worker"):
@@ -151,6 +192,9 @@ async def run(settings: Settings) -> int:
         async with sessions.begin() as session:
             if not await jobs.has_pending(session, ARCHIVE_IMPORT):
                 await jobs.enqueue(session, ARCHIVE_IMPORT)
+            # Потім — Диск: нове й змінене після збірки образу; далі сама себе планує (D-40)
+            if not await jobs.has_pending(session, ARCHIVE_SYNC):
+                await jobs.enqueue(session, ARCHIVE_SYNC)
         background.append(asyncio.create_task(worker.run()))
 
     try:
@@ -190,6 +234,7 @@ async def run(settings: Settings) -> int:
             with contextlib.suppress(asyncio.CancelledError):
                 await task
         await bot.session.close()
+        await drive.aclose()
         await llm.aclose()
         await engine.dispose()
     return 0

@@ -6,6 +6,7 @@ from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import pytest
 from aiogram import Bot
@@ -41,6 +42,7 @@ from forest_bot.ingest.upload import INDEX, PREPARE, UploadPipeline
 from forest_bot.jobs import Worker
 from forest_bot.keyboards import UploadAction
 from forest_bot.models import Upload, UploadStatus
+from forest_bot.notify import NOTIFY, Notifier
 from forest_bot.places import load_places
 from forest_bot.repo.places import sync_places
 from tests.factories import FAKE_TELEGRAM_TOKEN, make_settings
@@ -123,6 +125,7 @@ class Forest:
             {
                 PREPARE: lambda p: self.pipeline.prepare(int(p["upload_id"])),
                 INDEX: lambda p: self.pipeline.index(int(p["upload_id"])),
+                NOTIFY: Notifier(sessions, BotMessenger(self.bot), GRAPH, ZoneInfo("Europe/Kyiv")),
             },
         )
         self.dp = build_dispatcher(

@@ -1,4 +1,9 @@
-"""Логування: усе в stdout, секрети маскуються в кожному записі."""
+"""Логування: усе в stdout, секрети маскуються в кожному записі.
+
+Кожен запис несе контекст — апдейт Telegram (`upd 812`) чи задачу черги (`job 45 upload_index`):
+так з потоку логів збирається один сценарій, навіть коли звірів багато. Хто саме писав і що,
+у лог не потрапляє — лише номер апдейту.
+"""
 
 import io
 import json
@@ -6,11 +11,26 @@ import logging
 import logging.config
 import re
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import ClassVar
 
-TEXT_FORMAT = "%(asctime)s %(levelname)s %(name)s: %(message)s"
+TEXT_FORMAT = "%(asctime)s %(levelname)s %(name)s%(ctx)s: %(message)s"
+
+log_context: ContextVar[str] = ContextVar("log_context", default="")
+
+
+@contextmanager
+def context(label: str) -> Iterator[None]:
+    """Усі записи всередині — з цією позначкою (і в дочірніх задачах asyncio)."""
+    token = log_context.set(label)
+    try:
+        yield
+    finally:
+        log_context.reset(token)
+
 
 # Токен бота стоїть в URL Bot API, ключ Groq — у заголовках; ловимо за формою.
 # Без \b: в URL токен іде впритул після «bot» (…/bot123:AA…), межі слова там немає
@@ -27,6 +47,9 @@ class RedactingFormatter(logging.Formatter):
     secrets: ClassVar[set[str]] = set()
 
     def format(self, record: logging.LogRecord) -> str:
+        # Обробник пише синхронно, у тій самій задачі asyncio — контекст ще той самий
+        label = log_context.get()
+        record.ctx = f" [{label}]" if label else ""
         return redact(super().format(record), self.secrets)
 
 
@@ -40,6 +63,8 @@ class JsonFormatter(RedactingFormatter):
             "logger": record.name,
             "msg": record.getMessage(),
         }
+        if label := log_context.get():
+            payload["ctx"] = label
         if record.exc_info:
             payload["exc"] = self.formatException(record.exc_info)
         return redact(json.dumps(payload, ensure_ascii=False), self.secrets)
