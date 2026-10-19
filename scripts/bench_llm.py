@@ -63,12 +63,16 @@ CLOSE_TAG = frag(
 )
 
 
+def text_of(answer: Answer) -> str:
+    return " ".join(part.text for part in answer.parts).casefold()
+
+
 def has(*words: str) -> Callable[[Answer], bool]:
-    return lambda a: a.found and all(w.casefold() in a.text.casefold() for w in words)
+    return lambda a: a.found and all(w.casefold() in text_of(a) for w in words)
 
 
 def lacks(*words: str) -> Callable[[Answer], bool]:
-    return lambda a: a.found and not any(w.casefold() in a.text.casefold() for w in words)
+    return lambda a: a.found and not any(w.casefold() in text_of(a) for w in words)
 
 
 @dataclass(frozen=True)
@@ -172,7 +176,7 @@ async def bench(model: str, api_key: str) -> ModelResult:
             messages = answer_messages(case.question, case.fragments, TODAY)
             try:
                 answer, completion = await client.complete_json(
-                    messages, Answer, max_tokens=300, temperature=0
+                    messages, Answer, max_tokens=400, temperature=0
                 )
             except LlmError as error:
                 result.errors += 1
