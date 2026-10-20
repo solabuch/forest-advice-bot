@@ -64,7 +64,7 @@
 | D-34 | Ім'я питаємо один раз, при першому документі | `handlers/upload`, `migrations/versions/rev_0003_uploads`, `models` … ще 2 | `test_upload_flow::test_first_document_asks_name_then_indexes`, `test_upload_flow::test_refusing_name_cancels_document` | — |
 | D-35 | Питання про кілька місць → відповідь для кожного місця окремо в одному повідомленні, кожн… | `qa/answer`, `qa/places` | `test_question_place::test_several_places_in_order` | `multi-fees` |
 | D-36 | Питання без відповіді збираються (питання, місце, дата — без того, хто питав) | `handlers/stats`, `models`, `qa/answer` … ще 2 | `test_answer::test_nothing_in_scope_is_not_found_without_llm` | — |
-| D-37 | Новий варіант = те саме місце + така сама чи схожа назва | `ingest/upload`, `keyboards`, `migrations/versions/rev_0003_uploads` … ще 3 | `test_archive_import::test_unchanged_archive_does_not_revert_telegram_replacement`, `test_upload::test_new_version_asks_and_notifies_previous_author`, `test_versions::test_version_lifecycle` | — |
+| D-37 | Новий варіант = те саме місце + така сама чи схожа назва | `ingest/upload`, `keyboards`, `migrations/versions/rev_0003_uploads` … ще 3 | `test_archive_import::test_unchanged_archive_does_not_revert_telegram_replacement`, `test_upload::test_new_version_asks_and_notifies_previous_author`, `test_versions::test_shared_place_words_do_not_make_titles_similar`, `test_versions::test_version_lifecycle` | — |
 | D-40 | Архів синхронізується на старті й приблизно кожні 15 хв | `archive/drive`, `bot`, `config` … ще 3 | `test_drive::test_unknown_page_is_an_error_not_an_empty_folder` | — |
 | D-42 | Заміна документа → бот повідомляє того, хто надіслав попередній варіант | `ingest/index`, `ingest/upload`, `repo/documents` | `test_upload::test_new_version_asks_and_notifies_previous_author`, `test_versions::test_version_lifecycle` | — |
 | D-43 | Видалили новий варіант → знову діє попередній (історія варіантів зберігається, D-13) | `handlers/library`, `models`, `repo/documents` … ще 1 | `test_account_flow::test_forget_me`, `test_library_flow::test_deleting_new_version_brings_back_previous`, `test_versions::test_version_lifecycle` | — |
@@ -78,7 +78,7 @@
 | D-51 | «Забути мене» | `handlers/account`, `repo/users`, `texts` | модуль `test_account_flow` | — |
 | D-52 | Команда «Статистика» для всіх | `handlers/stats`, `models`, `repo/stats` … ще 1 | модуль `test_stats_flow` | — |
 | D-53 | Кілька документів одним повідомленням → обробка по черзі, кожен окремо | `handlers/upload`, `ingest/upload`, `migrations/versions/rev_0003_uploads` … ще 2 | `test_upload::test_batch_ends_with_summary` | — |
-| D-54 | Доступ — за запрошенням | `access`, `bot`, `models` … ще 2 | модуль `test_access` | — |
+| D-54 | Доступ — за запрошенням | `access`, `bot`, `models` … ще 2 | `test_access::test_code_typed_in_cyrillic_is_refused_politely` | — |
 | D-55 | Назви місць — gazetteer у places.yaml (D-21) | `llm/prompts`, `places`, `qa/answer` … ще 1 | модуль `test_answer`, `test_question_place` | `place-alias`, `place-typo`, `place-unknown` |
 
 ## Перевіряється не тестом
