@@ -24,6 +24,7 @@ from forest_bot.places import PlaceGraph, PlaceKind
 
 PLACE_PROMPT = "place-v1"
 ANSWER_PROMPT = "answer-v1"
+TRANSLATE_PROMPT = "translate-v1"
 
 WEEKDAYS = ("понеділок", "вівторок", "середа", "четвер", "п'ятниця", "субота", "неділя")
 
@@ -215,3 +216,29 @@ def answer_messages(
         f"<питання>\n{neutralize(question)}\n</питання>"
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
+
+# --- Переклад документа іншою мовою для пошуку (D-30) ---
+
+
+class Translation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    texts: list[str] = Field(description="переклад кожного фрагмента українською, в тому ж порядку")
+
+
+def translate_messages(texts: Sequence[str]) -> list[Message]:
+    """Фрагменти документа → українською, лише для пошуку: у відповідь іде оригінал."""
+    system = f"""Ти перекладаєш фрагменти документа українською, щоб їх знаходив пошук.
+
+Правила:
+- Переклади кожен фрагмент повністю, нічого не додаючи й не пропускаючи.
+- Числа, дати, назви місць та імена — точно як в оригіналі.
+- Поверни стільки перекладів, скільки фрагментів, у тому ж порядку.
+
+{GUARD}"""
+    fragments = "\n".join(
+        f'<фрагмент id="{index}">\n{neutralize(text)}\n</фрагмент>'
+        for index, text in enumerate(texts, start=1)
+    )
+    return [{"role": "system", "content": system}, {"role": "user", "content": fragments}]

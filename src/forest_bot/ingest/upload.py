@@ -24,6 +24,7 @@ from forest_bot import jobs, keyboards, notify, texts
 from forest_bot.ingest.index import PassageEmbedder, index_document
 from forest_bot.ingest.parse import ParsedDocument, ParseError, parse
 from forest_bot.ingest.place import detect_place
+from forest_bot.ingest.translate import LlmTranslator
 from forest_bot.llm.client import GroqClient
 from forest_bot.models import Document, DocumentSource, Upload, UploadStatus, User
 from forest_bot.places import PlaceGraph
@@ -52,6 +53,11 @@ class UploadPipeline:
     graph: PlaceGraph
     llm: GroqClient | None
     wake: Callable[[], None] = lambda: None
+
+    @property
+    def translator(self) -> LlmTranslator | None:
+        """Документ іншою мовою шукається за перекладом (D-30); без LLM — за оригіналом."""
+        return LlmTranslator(self.llm) if self.llm is not None else None
 
     def place_name(self, place_id: str) -> str:
         return self.graph.get(place_id).citation
@@ -181,6 +187,7 @@ class UploadPipeline:
                 ParsedDocument.from_json(upload.parsed),
                 self.embedder,
                 self.graph,
+                self.translator,
             )
             upload.status = UploadStatus.DONE
             upload.document_id = document.id

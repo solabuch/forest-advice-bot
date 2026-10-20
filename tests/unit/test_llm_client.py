@@ -122,7 +122,8 @@ async def test_first_model_answers(make_client: Callable[..., tuple[GroqClient, 
 @pytest.mark.parametrize(
     "failure",
     [
-        error(429, "rate limit", **{"retry-after": "7"}),
+        # Ліміт надовго (понад PREFER_WAIT) — коротший ліміт кращої моделі чекаємо
+        error(429, "rate limit", **{"retry-after": "30"}),
         error(503),
         error(500),
         httpx.ReadTimeout("read timeout"),
@@ -202,7 +203,8 @@ async def test_waits_for_nearest_model(
     assert clock.slept == [2.0]
     # Коротке очікування звіра не турбує
     assert warnings == []
-    assert fake.models == [BIG, QWEN, BIG]
+    # Краща звільниться за 2 с — слабшу не чіпаємо
+    assert fake.models == [BIG, BIG]
 
 
 async def test_long_wait_warns_once(
@@ -240,7 +242,8 @@ async def test_all_busy_beyond_max_wait_raises_with_retry_in(
 async def test_headers_prevent_request_that_would_hit_tpm(
     make_client: Callable[..., tuple[GroqClient, FakeGroq]],
 ) -> None:
-    headers = {"x-ratelimit-remaining-tokens": "100", "x-ratelimit-reset-tokens": "9.5s"}
+    # Ліміт оновиться нескоро (понад PREFER_WAIT) — відповідає наступна модель
+    headers = {"x-ratelimit-remaining-tokens": "100", "x-ratelimit-reset-tokens": "45s"}
     client, fake = make_client({BIG: [ok(**headers)], QWEN: [ok()]})
     await client.complete(MESSAGES)
     # У BIG лишилось 100 токенів TPM — менше, ніж зарезервує наступний запит
@@ -409,3 +412,45 @@ async def test_cache_expires_and_evicts(
     assert not (await client.complete(MESSAGES)).cached
     assert len(fake.requests) == 4
     await client.aclose()
+
+
+async def test_weaker_model_waits_for_a_better_one_freeing_soon(
+    make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
+) -> None:
+    # Краща лише вперлась у ліміт і звільниться за 8 с — чекаємо її, а не беремо слабшу
+    client, fake = make_client(
+        {
+            QWEN: [error(429, **{"retry-after": "8"}), ok()],
+            BIG: [error(429, **{"retry-after": "15"})],
+            SMALL: [ok("запасна")],
+        },
+        models=(QWEN, BIG, SMALL),
+    )
+    completion = await client.complete(MESSAGES)
+    assert completion.model == QWEN
+    assert clock.slept == [8.0]
+    assert SMALL not in fake.models
+
+
+async def test_weaker_model_answers_when_better_ones_are_far(
+    make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
+) -> None:
+    client, _ = make_client(
+        {
+            QWEN: [error(429, **{"retry-after": "60"})],
+            BIG: [error(429, **{"retry-after": "60"})],
+            SMALL: [ok("запасна")],
+        },
+        models=(QWEN, BIG, SMALL),
+    )
+    completion = await client.complete(MESSAGES)
+    assert (completion.model, clock.slept) == (SMALL, [])
+
+
+async def test_better_model_after_a_failure_is_not_waited_for(
+    make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
+) -> None:
+    # Збій (5xx) — не ліміт: чекати 10 с паузи марно, відповідає наступна одразу
+    client, fake = make_client({BIG: [error(503), ok()], QWEN: [ok()]})
+    completion = await client.complete(MESSAGES)
+    assert (completion.model, clock.slept, fake.models) == (QWEN, [], [BIG, QWEN])
