@@ -94,6 +94,16 @@ async def test_invitation_link_admits(gate: Gate) -> None:
     assert animal.joined_via is JoinedVia.INVITE
 
 
+async def test_code_typed_in_cyrillic_is_refused_politely(gate: Gate) -> None:
+    # D-54: «/start привіт» набрали вручну — відмова, а не виняток у middleware
+    await gate.say("/start")
+    await gate.send_as(STRANGER, "/start привіт")
+    sent = gate.last_to(STRANGER.id)
+    assert sent is not None
+    assert sent.text == texts.INVITE_EXPIRED
+    assert await gate.animal(STRANGER.id) is None
+
+
 async def test_member_gets_a_link_that_can_be_forwarded(gate: Gate) -> None:
     # R-03: запрошує будь-який мешканець — адмінів немає
     await gate.say("/start")
