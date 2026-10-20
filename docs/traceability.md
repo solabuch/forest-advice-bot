@@ -2,7 +2,7 @@
 
 > Згенеровано `scripts/trace.py` з [requirements.md](requirements.md), тестів і `eval/qa.yaml`. Вручну не редагувати: `uv run python scripts/trace.py`.
 
-Перевірено тестом чи eval-кейсом: **66 з 74** вимог і рішень.
+Перевірено тестом чи eval-кейсом: **67 з 75** вимог і рішень.
 
 | Вимога | Суть | Код | Тести | Eval |
 |---|---|---|---|---|
@@ -33,6 +33,7 @@
 | R-25 | Лише особисті повідомлення | `access`, `bot`, `texts` | модуль `test_access` | — |
 | R-26 | Питання звірі пишуть українською | — | — | `other-language` |
 | R-27 | Питання про весь ліс → лише поради лісу | `places`, `qa/search`, `repo/subscriptions` | `test_search::test_scope_follows_the_place_graph` | `fire-whole-forest`, `hunters-dogs-forest` |
+| R-28 | Строк поради минув → бот прямо каже про це, хоч би яка модель відповідала | `qa/answer`, `qa/deadlines` | `test_deadlines::test_passed_deadline_is_said_plainly` | — |
 | N-01 | Документ — від однієї поради до «путівника» (в архіві всі ≈ 1 сторінка) | — | — | — |
 | N-02 | Восени — кілька нових на день | — | — | — |
 | N-03 | Відповідь — за кілька секунд (ціль ≤ 10 с), поки шукає — «друкує…» | — | `test_question_flow::test_answer_has_signature_and_buttons` | — |
@@ -71,7 +72,7 @@
 | D-44 | Ім'я вже зайняте іншим звіром → бот просить додати розрізнювальне слово («Зайчик Сірий») | `handlers/account`, `handlers/upload`, `models` … ще 2 | модуль `test_account_flow` | — |
 | D-45 | Бот знає сьогоднішню дату й день тижня (Europe/Kyiv) і застосовує до них пораду («сьогодн… | `llm/prompts` | — | `ford-tuesday`, `ford-wednesday` |
 | D-46 | Рахує за порадою на прохання й показує розрахунок («3 × 4 = 12 жолудів | — | — | `fees-family` |
-| D-47 | Строк дії з документа автоматично не ховає | — | — | `raspberry-expired` |
+| D-47 | Строк дії з документа автоматично не ховає | `qa/deadlines` | модуль `test_deadlines` | `raspberry-expired` |
 | D-48 | Числа, дати, імена, умови — дослівно | `ingest/translate` | `test_prompts::test_neutralize` | `dangers-edge-dogs`, `fees-anthill`, `fees-edge` … ще 12 |
 | D-49 | Відповідь — на питання + умови, що його змінюють (заміни, винятки, строки), як в еталоні | `llm/prompts` | — | `fees-anthill-substitute`, `fees-exception`, `fees-reference` … ще 4 |
 | D-50 | Кнопки «Корисно» / «Хибно» під відповіддю → у статистику (D-52) | `handlers/questions`, `handlers/stats`, `keyboards` … ще 3 | модуль `test_question_flow`, `test_stats_flow` | — |
