@@ -130,7 +130,9 @@ class UploadPipeline:
         """Місце відоме → схожий документ того самого місця? Питаємо (D-37); ні — індексуємо."""
         if upload.place_id is None or upload.title is None:
             raise jobs.PermanentJobError(f"чернетка #{upload.id} без місця чи назви")
-        candidates = await documents.replacement_candidates(session, upload.place_id, upload.title)
+        candidates = await documents.replacement_candidates(
+            session, upload.place_id, upload.title, self.graph
+        )
         if not candidates:
             await self.start_index(session, upload)
             return
