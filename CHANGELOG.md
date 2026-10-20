@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/solabuch/forest-advice-bot/compare/v1.0.0...v1.1.0) (2026-10-20)
+
+
+### Можливості
+
+* refuse off-topic questions politely ([#39](https://github.com/solabuch/forest-advice-bot/issues/39)) ([9e1edb4](https://github.com/solabuch/forest-advice-bot/commit/9e1edb4e3e555a99699144cc904cdeb57e8f8fe3))
+* say plainly when a deadline has passed ([#36](https://github.com/solabuch/forest-advice-bot/issues/36)) ([f0bfbcf](https://github.com/solabuch/forest-advice-bot/commit/f0bfbcfbc2da15307db1e49db8e2ca0ada0ddb31))
+
+
+### Документація
+
+* record Mishka's confirmation of R-28 ([#38](https://github.com/solabuch/forest-advice-bot/issues/38)) ([27cf546](https://github.com/solabuch/forest-advice-bot/commit/27cf5460f46a50052f33c87b7076417d147fe03e))
+
 ## [1.0.0](https://github.com/solabuch/forest-advice-bot/compare/v0.2.1...v1.0.0) (2026-10-20)
 
 
