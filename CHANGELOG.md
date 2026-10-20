@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/solabuch/forest-advice-bot/compare/v1.1.0...v1.1.1) (2026-10-20)
+
+
+### Документація
+
+* record Mishka's confirmation of the off-topic refusal ([#40](https://github.com/solabuch/forest-advice-bot/issues/40)) ([60a28c5](https://github.com/solabuch/forest-advice-bot/commit/60a28c5edda267d323c83def6c319d09c2609bbd))
+
 ## [1.1.0](https://github.com/solabuch/forest-advice-bot/compare/v1.0.0...v1.1.0) (2026-10-20)
 
 
