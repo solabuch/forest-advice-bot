@@ -3,6 +3,8 @@
 Ліміт чи збій однієї моделі не зупиняє бота: запит іде наступній моделі ланцюжка.
 Коли зайняті всі, клієнт чекає найближчої доступності, попереджає через `on_wait`
 (бот каже звірові про затримку, R-20), а понад MAX_WAIT — LlmUnavailableError.
+Остання модель довгого ланцюжка — найслабша, запасна: її беремо, лише коли кращі
+не звільняться за RESERVE_WAIT (eval: дві з трьох неповних відповідей — від неї).
 """
 
 import asyncio
@@ -28,6 +30,8 @@ API_URL = "https://api.groq.com/openai/v1/chat/completions"
 TIMEOUT = httpx.Timeout(20.0, connect=5.0)
 # Скільки один виклик може чекати звільнення моделей (TPM оновлюється за хвилину)
 MAX_WAIT = 45.0
+# Скільки варто почекати кращу модель, перш ніж відповідати запасною
+RESERVE_WAIT = 20.0
 # Чекаємо довше — кажемо звірові про затримку (R-20)
 NOTIFY_AFTER = 3.0
 # Пауза для моделі після 5xx, таймауту чи збою мережі
@@ -197,7 +201,8 @@ class GroqClient:
         exhausted: set[str] = set()
         async with self._slots:
             while True:
-                for model in self.models:
+                wait_better: float | None = None
+                for index, model in enumerate(self.models):
                     profile = profile_for(model)
                     need = self._need(messages, max_tokens, profile)
                     state = self._states[model]
@@ -205,6 +210,10 @@ class GroqClient:
                         continue
                     if state.available_at(need, self._clock()) > self._clock():
                         continue
+                    if self._is_reserve(index):
+                        wait_better = self._better_soon(messages, max_tokens, exhausted, started)
+                        if wait_better is not None:
+                            break
                     attempts += 1
                     state.reserve(need)
                     body = self._body(model, profile, messages, max_tokens, temperature, schema)
@@ -224,7 +233,11 @@ class GroqClient:
                         self._cache.put(key, completion)
                         return completion
 
-                wait = self._nearest(messages, max_tokens, exhausted)
+                wait = (
+                    wait_better
+                    if wait_better is not None
+                    else self._nearest(messages, max_tokens, exhausted)
+                )
                 if wait is None:
                     if exhausted and schema is not None:
                         raise LlmOutputError("жодна модель не дала відповіді за схемою")
@@ -321,6 +334,26 @@ class GroqClient:
             + max_tokens
             + profile.reasoning_reserve
         )
+
+    def _is_reserve(self, index: int) -> bool:
+        """Остання модель ланцюжка з трьох і більше — запасна."""
+        return len(self.models) > 2 and index == len(self.models) - 1
+
+    def _better_soon(
+        self,
+        messages: Sequence[Message],
+        max_tokens: int,
+        exhausted: set[str],
+        started: float,
+    ) -> float | None:
+        """Через скільки звільниться краща за запасну модель — якщо скоро й укладаємось
+        у MAX_WAIT; інакше None (відповідає запасна)."""
+        wait = self._nearest(messages, max_tokens, exhausted | {self.models[-1]})
+        if wait is None or wait > RESERVE_WAIT:
+            return None
+        if self._clock() - started + wait > self._max_wait:
+            return None
+        return wait
 
     def _nearest(
         self, messages: Sequence[Message], max_tokens: int, exhausted: set[str]

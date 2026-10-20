@@ -24,6 +24,7 @@ from forest_bot import notify
 from forest_bot.ingest.index import PassageEmbedder, index_document
 from forest_bot.ingest.parse import ParsedDocument, ParseError, parse
 from forest_bot.ingest.place import detect_place
+from forest_bot.ingest.translate import LlmTranslator
 from forest_bot.llm.client import GroqClient
 from forest_bot.models import Document, DocumentSource
 from forest_bot.places import PlaceGraph
@@ -132,7 +133,9 @@ async def import_archive(
             return
         async with writing:
             previous = known.get(entry.id)
-            await write_entry(sessions, entry, parsed, decision.place_id, previous, embedder, graph)
+            await write_entry(
+                sessions, entry, parsed, decision.place_id, previous, embedder, graph, llm
+            )
             if previous:
                 stats.updated += 1
             else:
@@ -174,7 +177,9 @@ async def write_entry(
     previous: Document | None,
     embedder: PassageEmbedder,
     graph: PlaceGraph,
+    llm: GroqClient | None = None,
 ) -> None:
+    translator = LlmTranslator(llm) if llm is not None else None
     async with sessions.begin() as session:
         document = await documents.create(
             session,
@@ -192,5 +197,5 @@ async def write_entry(
             ),
             lineage_id=previous.lineage_id if previous else None,
         )
-        replaced = await index_document(session, document, parsed, embedder, graph)
+        replaced = await index_document(session, document, parsed, embedder, graph, translator)
         await notify.enqueue(session, document, replaced=replaced is not None)

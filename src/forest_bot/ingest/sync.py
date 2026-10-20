@@ -160,7 +160,14 @@ class DriveSync:
         )
         try:
             await write_entry(
-                self.sessions, entry, parsed, decision.place_id, previous, self.embedder, self.graph
+                self.sessions,
+                entry,
+                parsed,
+                decision.place_id,
+                previous,
+                self.embedder,
+                self.graph,
+                self.llm,
             )
         except IntegrityError:
             # Той самий файл уже надіслав звір через Telegram (A-09)

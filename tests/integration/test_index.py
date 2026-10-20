@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from forest_bot.ingest.index import NothingToIndexError, index_document
 from forest_bot.ingest.parse import Block, ParsedDocument
+from forest_bot.ingest.translate import TRANSLATION_MARK
 from forest_bot.models import EMBEDDING_DIM, Chunk, Document, DocumentSource, DocumentStatus
 from forest_bot.places import load_places
 from forest_bot.repo import documents
@@ -145,3 +146,34 @@ async def test_document_without_text_is_not_indexed(session: AsyncSession) -> No
     with pytest.raises(NothingToIndexError):
         await index_document(session, document, empty, FakeEmbedder(), GRAPH)
     assert document.is_current is False
+
+
+class FakeTranslator:
+    def __init__(self) -> None:
+        self.asked: list[str] = []
+
+    async def to_ukrainian(self, texts: Sequence[str]) -> list[str] | None:
+        self.asked.extend(texts)
+        return [f"Переклад: {t}" for t in texts]
+
+
+@pytest.mark.usefixtures("places")
+async def test_foreign_document_is_found_by_translation(session: AsyncSession) -> None:
+    # D-30: вектор — з перекладу; у фрагменті — оригінал і переклад (його бачить і FTS)
+    original = "Pick chanterelles two days after rain, not earlier."
+    english = ParsedDocument(blocks=(Block(original, None),), title="Chanterelles")
+    embedder, translator = FakeEmbedder(), FakeTranslator()
+    document = await new_document(session, "e")
+    await index_document(session, document, english, embedder, GRAPH, translator)
+    assert translator.asked == [original]
+    assert embedder.seen[0].endswith(f"\nПереклад: {original}")
+    text = await session.scalar(select(Chunk.text).where(Chunk.document_id == document.id))
+    assert text == f"{original}\n\n{TRANSLATION_MARK}\nПереклад: {original}"
+
+
+@pytest.mark.usefixtures("places")
+async def test_ukrainian_document_is_not_translated(session: AsyncSession) -> None:
+    translator = FakeTranslator()
+    document = await new_document(session, "u")
+    await index_document(session, document, PARSED, FakeEmbedder(), GRAPH, translator)
+    assert translator.asked == []

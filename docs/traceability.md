@@ -58,7 +58,7 @@
 | D-26 | Добровільна підписка на місце | `handlers/subscriptions`, `keyboards`, `models` … ще 3 | модуль `test_subscriptions_flow` | — |
 | D-28 | Під відповіддю — кнопки з назвами документів-джерел | `handlers/questions`, `keyboards`, `models` … ще 1 | `test_drive_sync::test_new_file_is_added_and_can_be_sent` | — |
 | D-29 | Зміна імені — окремою командою з підтвердженням | `handlers/account`, `repo/users`, `texts` | `test_account_flow::test_rename_with_confirmation`, `test_versions::test_names_and_membership` | — |
-| D-30 | Відповіді — українською | `llm/prompts` | — | `other-language` |
+| D-30 | Відповіді — українською | `ingest/index`, `ingest/translate`, `ingest/upload` … ще 1 | `test_index::test_foreign_document_is_found_by_translation`, `test_translate::test_is_foreign` | `other-language` |
 | D-31 | Привітання й подяка → коротка привітна відповідь | `handlers/questions` | модуль `test_question_flow` | — |
 | D-32 | Тон — по-лісовому привітний, на «ти», коротко | `texts` | — | — |
 | D-34 | Ім'я питаємо один раз, при першому документі | `handlers/upload`, `migrations/versions/rev_0003_uploads`, `models` … ще 2 | `test_upload_flow::test_first_document_asks_name_then_indexes`, `test_upload_flow::test_refusing_name_cancels_document` | — |
@@ -72,7 +72,7 @@
 | D-45 | Бот знає сьогоднішню дату й день тижня (Europe/Kyiv) і застосовує до них пораду («сьогодн… | `llm/prompts` | — | `ford-tuesday`, `ford-wednesday` |
 | D-46 | Рахує за порадою на прохання й показує розрахунок («3 × 4 = 12 жолудів | — | — | `fees-family` |
 | D-47 | Строк дії з документа автоматично не ховає | — | — | `raspberry-expired` |
-| D-48 | Числа, дати, імена, умови — дослівно | — | `test_prompts::test_neutralize` | `dangers-edge-dogs`, `fees-anthill`, `fees-edge` … ще 12 |
+| D-48 | Числа, дати, імена, умови — дослівно | `ingest/translate` | `test_prompts::test_neutralize` | `dangers-edge-dogs`, `fees-anthill`, `fees-edge` … ще 12 |
 | D-49 | Відповідь — на питання + умови, що його змінюють (заміни, винятки, строки), як в еталоні | `llm/prompts` | — | `fees-anthill-substitute`, `fees-exception`, `fees-reference` … ще 4 |
 | D-50 | Кнопки «Корисно» / «Хибно» під відповіддю → у статистику (D-52) | `handlers/questions`, `handlers/stats`, `keyboards` … ще 3 | модуль `test_question_flow`, `test_stats_flow` | — |
 | D-51 | «Забути мене» | `handlers/account`, `repo/users`, `texts` | модуль `test_account_flow` | — |

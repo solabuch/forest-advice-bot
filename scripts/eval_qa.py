@@ -16,6 +16,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import re
 import statistics
 import sys
 import time
@@ -37,6 +38,7 @@ from forest_bot.ingest.archive import import_archive
 from forest_bot.ingest.index import index_document
 from forest_bot.ingest.parse import parse
 from forest_bot.ingest.place import detect_place
+from forest_bot.ingest.translate import LlmTranslator
 from forest_bot.llm.client import GroqClient, LlmError
 from forest_bot.llm.profiles import DEFAULT_CHAIN
 from forest_bot.llm.prompts import ANSWER_PROMPT
@@ -51,6 +53,8 @@ logger = logging.getLogger("eval_qa")
 ROOT = Path(__file__).resolve().parents[1]
 CASES = ROOT / "eval" / "qa.yaml"
 RESULTS = ROOT / "eval" / "results"
+# Підпис частини відповіді — до кінця рядка
+SIGNATURE = re.compile(r" — з документа .*$", re.MULTILINE)
 EVAL_USER = 990_001
 Sessions = async_sessionmaker[AsyncSession]
 
@@ -190,7 +194,9 @@ class Eval:
         facts = [str(f) for f in case.get("facts", [])]
         result.facts_total = len(facts)
         result.facts_missing = [f for f in facts if not contains(reply.text, f)]
-        result.absent_present = [a for a in case.get("absent", []) if contains(reply.text, a)]
+        # Підпис збирає код із назви документа — «absent» перевіряє лише слова відповіді
+        body = SIGNATURE.sub("", reply.text)
+        result.absent_present = [a for a in case.get("absent", []) if contains(body, a)]
         return result
 
     async def upload(self, item: dict[str, Any]) -> None:
@@ -222,7 +228,10 @@ class Eval:
                 sender_id=user.id,
                 lineage_id=replaced.lineage_id if replaced else None,
             )
-            await index_document(session, document, parsed, self.embedder, self.graph)
+            # Як у боті: документ іншою мовою шукається за перекладом (D-30)
+            await index_document(
+                session, document, parsed, self.embedder, self.graph, LlmTranslator(self.llm)
+            )
 
 
 def summary(results: list[Result]) -> dict[str, Any]:

@@ -409,3 +409,36 @@ async def test_cache_expires_and_evicts(
     assert not (await client.complete(MESSAGES)).cached
     assert len(fake.requests) == 4
     await client.aclose()
+
+
+async def test_reserve_model_waits_for_a_better_one_freeing_soon(
+    make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
+) -> None:
+    # Найслабша модель — запас: кращі звільняться за 8 с, тож чекаємо їх
+    client, fake = make_client(
+        {
+            QWEN: [error(429, **{"retry-after": "8"}), ok()],
+            BIG: [error(429, **{"retry-after": "15"})],
+            SMALL: [ok("запасна")],
+        },
+        models=(QWEN, BIG, SMALL),
+    )
+    completion = await client.complete(MESSAGES)
+    assert completion.model == QWEN
+    assert clock.slept == [8.0]
+    assert SMALL not in fake.models
+
+
+async def test_reserve_model_answers_when_better_ones_are_far(
+    make_client: Callable[..., tuple[GroqClient, FakeGroq]], clock: FakeClock
+) -> None:
+    client, _ = make_client(
+        {
+            QWEN: [error(429, **{"retry-after": "60"})],
+            BIG: [error(429, **{"retry-after": "60"})],
+            SMALL: [ok("запасна")],
+        },
+        models=(QWEN, BIG, SMALL),
+    )
+    completion = await client.complete(MESSAGES)
+    assert (completion.model, clock.slept) == (SMALL, [])

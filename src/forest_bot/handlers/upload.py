@@ -149,7 +149,12 @@ async def _reindex(
     if parsed is None or not document.is_current:
         return
     await index_document(
-        session, document, ParsedDocument.from_json(parsed), pipeline.embedder, pipeline.graph
+        session,
+        document,
+        ParsedDocument.from_json(parsed),
+        pipeline.embedder,
+        pipeline.graph,
+        pipeline.translator,
     )
 
 
