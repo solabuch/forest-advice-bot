@@ -3,8 +3,9 @@
 Ліміт чи збій однієї моделі не зупиняє бота: запит іде наступній моделі ланцюжка.
 Коли зайняті всі, клієнт чекає найближчої доступності, попереджає через `on_wait`
 (бот каже звірові про затримку, R-20), а понад MAX_WAIT — LlmUnavailableError.
-Остання модель довгого ланцюжка — найслабша, запасна: її беремо, лише коли кращі
-не звільняться за RESERVE_WAIT (eval: дві з трьох неповних відповідей — від неї).
+Ланцюжок — від найкращої моделі: якщо краща лише вперлась у ліміт і звільниться за
+PREFER_WAIT, чекаємо її, а не відповідаємо слабшою (eval: усі неповні відповіді — від
+запасних моделей під навантаженням). Краща впала зі збоєм — одразу наступна.
 """
 
 import asyncio
@@ -30,8 +31,10 @@ API_URL = "https://api.groq.com/openai/v1/chat/completions"
 TIMEOUT = httpx.Timeout(20.0, connect=5.0)
 # Скільки один виклик може чекати звільнення моделей (TPM оновлюється за хвилину)
 MAX_WAIT = 45.0
-# Скільки варто почекати кращу модель, перш ніж відповідати запасною
-RESERVE_WAIT = 20.0
+# Скільки варто почекати кращу модель, перш ніж відповідати слабшою
+PREFER_WAIT = 20.0
+# Причина блокування, коли модель лише вперлась у ліміт (а не впала)
+RATE_LIMITED = "429"
 # Чекаємо довше — кажемо звірові про затримку (R-20)
 NOTIFY_AFTER = 3.0
 # Пауза для моделі після 5xx, таймауту чи збою мережі
@@ -210,8 +213,10 @@ class GroqClient:
                         continue
                     if state.available_at(need, self._clock()) > self._clock():
                         continue
-                    if self._is_reserve(index):
-                        wait_better = self._better_soon(messages, max_tokens, exhausted, started)
+                    if index > 0:
+                        wait_better = self._better_soon(
+                            index, messages, max_tokens, exhausted, started
+                        )
                         if wait_better is not None:
                             break
                     attempts += 1
@@ -275,7 +280,7 @@ class GroqClient:
             raise LlmAuthError("GROQ_API_KEY недійсний або без доступу")
         if status == httpx.codes.TOO_MANY_REQUESTS:
             retry = parse_duration(response.headers.get("retry-after"))
-            state.block(now + (retry if retry is not None else FAILURE_COOLDOWN), "429")
+            state.block(now + (retry if retry is not None else FAILURE_COOLDOWN), RATE_LIMITED)
         elif status == httpx.codes.NOT_FOUND:
             state.block(now + MISSING_COOLDOWN, "немає в Groq")
         elif status == httpx.codes.REQUEST_ENTITY_TOO_LARGE or (
@@ -335,23 +340,30 @@ class GroqClient:
             + profile.reasoning_reserve
         )
 
-    def _is_reserve(self, index: int) -> bool:
-        """Остання модель ланцюжка з трьох і більше — запасна."""
-        return len(self.models) > 2 and index == len(self.models) - 1
-
     def _better_soon(
         self,
+        index: int,
         messages: Sequence[Message],
         max_tokens: int,
         exhausted: set[str],
         started: float,
     ) -> float | None:
-        """Через скільки звільниться краща за запасну модель — якщо скоро й укладаємось
-        у MAX_WAIT; інакше None (відповідає запасна)."""
-        wait = self._nearest(messages, max_tokens, exhausted | {self.models[-1]})
-        if wait is None or wait > RESERVE_WAIT:
+        """Через скільки звільниться від ліміту краща за `models[index]` модель — якщо
+        скоро й укладаємось у MAX_WAIT; None — відповідає ця. Збій кращої не чекаємо."""
+        now = self._clock()
+        waits = []
+        for model in self.models[:index]:
+            state = self._states[model]
+            need = self._need(messages, max_tokens, profile_for(model))
+            if model in exhausted or need > state.tpm_limit:
+                continue
+            if state.blocked_until > now and state.reason != RATE_LIMITED:
+                continue
+            waits.append(state.available_at(need, now) - now)
+        if not waits:
             return None
-        if self._clock() - started + wait > self._max_wait:
+        wait = max(min(waits), 0.0)
+        if wait > PREFER_WAIT or now - started + wait > self._max_wait:
             return None
         return wait
 
