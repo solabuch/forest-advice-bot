@@ -44,7 +44,7 @@
 | D-03 | Поради одного рівня різняться (листяна й річкова для «Під вербою» | `llm/prompts`, `qa/answer`, `qa/render` | модуль `test_render` | `mushrooms-willow-when` |
 | D-05 | Видалити документ може лише той, хто його надіслав | `handlers/library`, `keyboards`, `repo/documents` | `test_versions::test_version_lifecycle` | — |
 | D-06 | Місце не вказане → перепитати кнопками (ліс / частина / рукавичка), після вибору відповіс… | `handlers/questions`, `keyboards`, `qa/answer` … ще 1 | модуль `test_question_flow` | `place-missing`, `place-unknown` |
-| D-08 | Доречної поради немає ні для місця, ні в загальних → «не знайшов поради про це для «Місце… | — | модуль `test_answer` | `not-found-edge`, `not-found-plane`, `not-found-storks` |
+| D-08 | Доречної поради немає ні для місця, ні в загальних → «не знайшов поради про це для «Місце… | — | модуль `test_answer` | `not-found-edge`, `not-found-storks` |
 | D-12 | Точність міряємо набором перевірочних питань за архівом (40–60) | — | — | — |
 | D-13 | Строку зберігання немає, автоматично нічого не видаляється | `models`, `repo/documents`, `repo/users` | `test_versions::test_version_lifecycle` | — |
 | D-14 | Формати | `ingest/parse` | модуль `test_parse` | — |
@@ -60,11 +60,11 @@
 | D-28 | Під відповіддю — кнопки з назвами документів-джерел | `handlers/questions`, `keyboards`, `models` … ще 1 | `test_drive_sync::test_new_file_is_added_and_can_be_sent` | — |
 | D-29 | Зміна імені — окремою командою з підтвердженням | `handlers/account`, `repo/users`, `texts` | `test_account_flow::test_rename_with_confirmation`, `test_versions::test_names_and_membership` | — |
 | D-30 | Відповіді — українською | `ingest/index`, `ingest/translate`, `ingest/upload` … ще 1 | `test_index::test_foreign_document_is_found_by_translation`, `test_translate::test_is_foreign` | `other-language` |
-| D-31 | Привітання й подяка → коротка привітна відповідь | `handlers/questions` | модуль `test_question_flow` | — |
+| D-31 | Привітання й подяка → коротка привітна відповідь | `handlers/questions`, `llm/prompts`, `qa/answer` … ще 1 | `test_answer::test_found_advice_is_never_hidden_as_off_topic`, `test_answer::test_off_topic_with_place_is_not_unanswered`, `test_answer::test_off_topic_without_place_is_refused_politely`, `test_question_flow::test_off_topic_follow_up_is_refused_and_keeps_context` | `off-topic-joke`, `off-topic-weather`, `off-topic-weather-place` |
 | D-32 | Тон — по-лісовому привітний, на «ти», коротко | `texts` | — | — |
 | D-34 | Ім'я питаємо один раз, при першому документі | `handlers/upload`, `migrations/versions/rev_0003_uploads`, `models` … ще 2 | `test_upload_flow::test_first_document_asks_name_then_indexes`, `test_upload_flow::test_refusing_name_cancels_document` | — |
 | D-35 | Питання про кілька місць → відповідь для кожного місця окремо в одному повідомленні, кожн… | `qa/answer`, `qa/places` | `test_question_place::test_several_places_in_order` | `multi-fees` |
-| D-36 | Питання без відповіді збираються (питання, місце, дата — без того, хто питав) | `handlers/stats`, `models`, `qa/answer` … ще 2 | `test_answer::test_nothing_in_scope_is_not_found_without_llm` | — |
+| D-36 | Питання без відповіді збираються (питання, місце, дата — без того, хто питав) | `handlers/stats`, `models`, `qa/answer` … ще 2 | `test_answer::test_nothing_in_scope_is_not_found_without_llm`, `test_answer::test_off_topic_with_place_is_not_unanswered` | — |
 | D-37 | Новий варіант = те саме місце + така сама чи схожа назва | `ingest/upload`, `keyboards`, `migrations/versions/rev_0003_uploads` … ще 3 | `test_archive_import::test_unchanged_archive_does_not_revert_telegram_replacement`, `test_upload::test_new_version_asks_and_notifies_previous_author`, `test_versions::test_shared_place_words_do_not_make_titles_similar`, `test_versions::test_version_lifecycle` | — |
 | D-40 | Архів синхронізується на старті й приблизно кожні 15 хв | `archive/drive`, `bot`, `config` … ще 3 | `test_drive::test_unknown_page_is_an_error_not_an_empty_folder` | — |
 | D-42 | Заміна документа → бот повідомляє того, хто надіслав попередній варіант | `ingest/index`, `ingest/upload`, `repo/documents` | `test_upload::test_new_version_asks_and_notifies_previous_author`, `test_versions::test_version_lifecycle` | — |

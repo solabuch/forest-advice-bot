@@ -180,7 +180,7 @@ cases:
     question: До якої частини лісу належить рукавичка на узліссі?
     places: [na-uzlissi]
     sources: [Карта лісу.pdf]
-    facts: [жодн | ні до | не належить]
+    facts: [жодн | ні до | не належить | ні хвойн]
 
   # --- Однаковий рівень, різні поради (D-03) і конкретне перед загальним (R-24) ---
   - id: mushrooms-willow-when
@@ -338,12 +338,23 @@ cases:
     question: Скільки внесок під кленом?
     places: []
 
+  # --- Не про ліс (D-31): чемна відмова з підказкою, а не «не знайшов» і не кнопки ---
+  - id: off-topic-weather-place
+    req: [D-31]
+    question: Яка погода буде завтра під дубом?
+    off_topic: true
+
+  - id: off-topic-weather
+    req: [D-31]
+    question: Яка завтра погода?
+    off_topic: true
+
+  - id: off-topic-joke
+    req: [D-31]
+    question: Розкажи анекдот про ведмедя
+    off_topic: true
+
   # --- Не знайшов (D-08) ---
-  - id: not-found-plane
-    req: [D-08]
-    question: Скільки коштує квиток на літак під дубом?
-    places: [pid-dubom]
-    found: false
 
   - id: not-found-storks
     req: [D-08]
