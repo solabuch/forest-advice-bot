@@ -234,6 +234,7 @@ ASK_QUESTION_PLACE = (
     "буває різна."
 )
 FROM_CONTEXT = "Відповідь для {place}, як у попередньому питанні."
+DEADLINE_PASSED = "Але строк «{deadline}» уже минув: сьогодні {today}, тож зараз уже пізно."
 OTHER_PLACE = "Інше місце"
 DOCUMENT_BUTTON = "📄 {title}"
 USEFUL = "👍 Корисно"

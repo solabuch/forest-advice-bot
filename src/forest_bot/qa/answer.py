@@ -21,6 +21,7 @@ from forest_bot.llm.client import Completion, GroqClient
 from forest_bot.llm.prompts import Answer, Fragment, answer_messages
 from forest_bot.models import QaLog, Unanswered
 from forest_bot.places import Level, Place, PlaceGraph, PlaceKind
+from forest_bot.qa.deadlines import warn_if_passed
 from forest_bot.qa.places import detect_places, find_places, focus
 from forest_bot.qa.render import RenderedPart, compose, order, short_title
 from forest_bot.qa.search import Passage, scope, search
@@ -248,7 +249,12 @@ class Answerer:
             on_wait=on_wait,
         )
         completions.append(completion)
-        return _PlaceAnswer(place, self._parts(answer, passages), answer.differs)
+        # Минулий строк — прямо, хоч би яка модель відповідала (R-28)
+        parts = [
+            RenderedPart(warn_if_passed(p.text, today), p.passage)
+            for p in self._parts(answer, passages)
+        ]
+        return _PlaceAnswer(place, parts, answer.differs)
 
     @staticmethod
     def _parts(answer: Answer, passages: list[Passage]) -> list[RenderedPart]:
