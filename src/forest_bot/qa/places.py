@@ -62,6 +62,8 @@ class QuestionPlaces:
     rest: str = ""
     # Де в питанні згадано місця: (місце, початок, кінець) — для `focus`
     mentions: tuple[tuple[str, int, int], ...] = ()
+    # Питання не про життя лісу (D-31) — замість кнопок місць чемна відмова
+    off_topic: bool = False
 
 
 def normalize(text: str) -> str:
@@ -223,4 +225,6 @@ async def detect_places(question: str, graph: PlaceGraph, llm: GroqClient | None
     guess = resolve_place(guess, graph)
     if guess.place_id and guess.confidence >= LLM_MIN_CONFIDENCE:
         return QuestionPlaces((guess.place_id,), "llm", guess.confidence, found.rest)
-    return QuestionPlaces((), "none", guess.confidence, found.rest, found.mentions)
+    return QuestionPlaces(
+        (), "none", guess.confidence, found.rest, found.mentions, off_topic=not guess.about_forest
+    )

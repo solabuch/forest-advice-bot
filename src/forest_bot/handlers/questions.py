@@ -130,6 +130,10 @@ async def _answer(
         await question_message.reply(texts.LLM_FAILED)
         return
 
+    if reply.off_topic:
+        # D-31: не про ліс — без кнопок і без «як у попередньому питанні»; контекст лишається
+        await question_message.reply(texts.OFF_TOPIC)
+        return
     if reply.needs_place:
         await question_message.reply(
             texts.ASK_QUESTION_PLACE, reply_markup=keyboards.question_places(answerer.graph)

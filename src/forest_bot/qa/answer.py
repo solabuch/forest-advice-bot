@@ -17,6 +17,7 @@ import numpy as np
 import numpy.typing as npt
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from forest_bot import texts
 from forest_bot.llm.client import Completion, GroqClient
 from forest_bot.llm.prompts import Answer, Fragment, answer_messages
 from forest_bot.models import QaLog, Unanswered
@@ -76,6 +77,11 @@ class Reply:
     needs_place: bool = False
     # Документи, які знайшов пошук (від найближчого), — для eval: hit@k
     retrieved: tuple[int, ...] = ()
+    # Питання не про життя лісу (D-31): чемна відмова з підказкою, не «не знайшов»
+    off_topic: bool = False
+
+
+OFF_TOPIC = Reply(texts.OFF_TOPIC, found=False, place_ids=(), off_topic=True)
 
 
 @dataclass
@@ -83,6 +89,7 @@ class _PlaceAnswer:
     place: Place
     parts: list[RenderedPart]
     differs: bool
+    off_topic: bool = False
 
 
 def place_label(place: Place, graph: PlaceGraph) -> str:
@@ -139,6 +146,9 @@ class Answerer:
         started = time.monotonic()
         if place_ids is None:
             found = await detect_places(question, self.graph, self.llm)
+            if found.off_topic:
+                logger.info("Питання не про ліс — чемна відмова (D-31)")
+                return OFF_TOPIC
             if not found.place_ids:
                 return Reply("", found=False, place_ids=(), needs_place=True)
             place_ids = found.place_ids
@@ -165,6 +175,11 @@ class Answerer:
                 answers.append(
                     await self._answer(asked, previous, place, passages, completions, on_wait)
                 )
+            # Модель каже «не про ліс» лише разом із «не знайшов» — знайдену пораду не ховаємо;
+            # у «питання без відповіді» таке не потрапляє (D-36)
+            if all(a.off_topic and not a.parts for a in answers):
+                logger.info("Питання не про ліс — чемна відмова (D-31)")
+                return OFF_TOPIC
             text = self._compose(answers)
             # У порядку показу: конкретна порада першою (R-24) — так і кнопки джерел
             parts = [part for answer in answers for part in order(answer.parts)]
@@ -254,7 +269,9 @@ class Answerer:
             RenderedPart(warn_if_passed(p.text, today), p.passage)
             for p in self._parts(answer, passages)
         ]
-        return _PlaceAnswer(place, parts, answer.differs)
+        return _PlaceAnswer(
+            place, parts, answer.differs, off_topic=not answer.found and not answer.about_forest
+        )
 
     @staticmethod
     def _parts(answer: Answer, passages: list[Passage]) -> list[RenderedPart]:
