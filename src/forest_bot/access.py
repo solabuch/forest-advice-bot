@@ -94,7 +94,9 @@ class Access(BaseMiddleware):
                 return None
             code = _start_code(event)
             if code:
-                if secrets.compare_digest(code, await invite_code(session, self.settings)):
+                # Байти: код можуть набрати вручну кирилицею, а рядки compare_digest — лише ASCII
+                expected = await invite_code(session, self.settings)
+                if secrets.compare_digest(code.encode(), expected.encode()):
                     await users.admit(session, user_id, JoinedVia.INVITE)
                     logger.info("Новий мешканець за запрошенням")
                     return None

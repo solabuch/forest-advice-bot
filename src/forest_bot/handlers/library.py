@@ -120,8 +120,7 @@ async def place_documents(
         if not lines:
             continue
         if len(applicable) > 1:
-            citation = item.place.citation
-            lines.insert(0, texts.PLACE_GROUP.format(place=citation[:1].upper() + citation[1:]))
+            lines.insert(0, texts.PLACE_GROUP.format(place=item.place.citation))
         groups.append("\n".join(lines))
     return texts.PLACE_DOCUMENTS.format(place=place.citation) + "\n\n" + "\n\n".join(groups)
 

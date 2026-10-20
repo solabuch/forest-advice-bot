@@ -72,7 +72,7 @@ async def on_document(message: Message, pipeline: UploadPipeline, settings: Sett
     elif message.media_group_id is None:
         await message.answer(texts.RECEIVED.format(name=name))
     elif not any(u.batch == message.media_group_id for u in batch):
-        await message.answer(texts.RECEIVED_MANY.format(count="кілька"))
+        await message.answer(texts.RECEIVED_MANY)
 
 
 class AwaitingAnswer(Filter):

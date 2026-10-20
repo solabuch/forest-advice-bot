@@ -124,10 +124,10 @@ async def test_place_documents_follow_the_place_graph(forest: Forest) -> None:
     assert forest.replies()[-1] == "\n\n".join(
         [
             texts.PLACE_DOCUMENTS.format(place="рукавички «Під вербою»"),
-            f"Рукавички «Під вербою»:\n• «Порада pid-verboiu» — {archive}",
-            f"Листяного лісу:\n• «Порада deciduous» — {archive}",
-            f"Частини лісу біля річки:\n• «Порада river» — {archive}",
-            f"Всього лісу:\n• «Пожежа 2026» — {archive}\n• «Порада forest» — {archive}",
+            f"Для рукавички «Під вербою»:\n• «Порада pid-verboiu» — {archive}",
+            f"Для листяного лісу:\n• «Порада deciduous» — {archive}",
+            f"Для частини лісу біля річки:\n• «Порада river» — {archive}",
+            f"Для всього лісу:\n• «Пожежа 2026» — {archive}\n• «Порада forest» — {archive}",
         ]
     )
 

@@ -45,7 +45,9 @@ async def test_version_lifecycle(session: AsyncSession) -> None:
     archived = await archive_fees(session)
 
     # Кабан надсилає нові внески: схожа назва, те саме місце → кандидат на заміну (D-37)
-    candidates = await documents.replacement_candidates(session, "pid-dubom", "Членські внески")
+    candidates = await documents.replacement_candidates(
+        session, "pid-dubom", "Членські внески", GRAPH
+    )
     assert [c.id for c in candidates] == [archived.id]
     new = await documents.create(
         session,
@@ -103,8 +105,31 @@ async def test_failed_version_keeps_old_one(session: AsyncSession) -> None:
 @pytest.mark.usefixtures("forest")
 async def test_candidates_only_same_place_and_similar_title(session: AsyncSession) -> None:
     await archive_fees(session)
-    assert await documents.replacement_candidates(session, "u-lishchyni", "Членські внески") == []
-    assert await documents.replacement_candidates(session, "pid-dubom", "Грибний путівник") == []
+    for place_id, title in (("u-lishchyni", "Членські внески"), ("pid-dubom", "Грибний путівник")):
+        assert await documents.replacement_candidates(session, place_id, title, GRAPH) == []
+
+
+@pytest.mark.usefixtures("forest")
+async def test_shared_place_words_do_not_make_titles_similar(session: AsyncSession) -> None:
+    # D-37: «в рукавичці «Під дубом»» є в назвах усіх документів рукавички — схожість
+    # рахуємо за темою, інакше «Нічна тиша» виглядає новим варіантом «Чергування»
+    fees = await archive_fees(session)
+    duty = await documents.create(
+        session,
+        place_id="pid-dubom",
+        title="Чергування в рукавичці «Під дубом»",
+        source=DocumentSource.ARCHIVE,
+        file=file("d", archive_file_id="drive-2", archive_modified="Oct 13"),
+    )
+    assert await documents.activate(session, duty) is None
+
+    async def candidates(title: str) -> list[int]:
+        found = await documents.replacement_candidates(session, "pid-dubom", title, GRAPH)
+        return [d.id for d in found]
+
+    assert await candidates("Нічна тиша в рукавичці «Під дубом»") == []
+    assert await candidates("Членські внески рукавички «Під дубом»") == [fees.id]
+    assert await candidates("Чергування рукавички Під дубом на зиму") == [duty.id]
 
 
 @pytest.mark.usefixtures("forest")

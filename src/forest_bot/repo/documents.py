@@ -12,14 +12,20 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from forest_bot.models import Document, DocumentSource, DocumentStatus
 from forest_bot.places import PlaceGraph, normalize_name
+from forest_bot.qa.places import find_places
 
-# Схожість назв (pg_trgm) для кандидатів на заміну; уточнюється на прикладах інжесту
+# Схожість тем назв (триграми, як pg_trgm) для кандидатів на заміну
 SIMILAR_TITLE = 0.4
+# Лишаються в назві після назви місця: «поруч із рукавичкою», «в лісі», «від рукавички»
+_PLACE_WORDS = {
+    *("в", "у", "ві", "уві", "із", "з", "зі", "біля", "від", "до", "для", "поруч", "під", "на"),
+    *("ліс", "лісу", "лісі", "частини", "частина"),
+}
 
 
 class DocumentError(Exception):
@@ -50,23 +56,45 @@ async def find_by_sha(session: AsyncSession, sha256: str) -> Document | None:
     )
 
 
+def topic_key(title: str, graph: PlaceGraph) -> str:
+    """Про що документ — назва без місця: «Нічна тиша в рукавичці «У соснах»» → «нічна тиша».
+
+    Інакше спільне «в рукавичці «У соснах»» робить схожими «Нічну тишу» й «Чергування».
+    """
+    rest = title_key(find_places(title, graph).rest)
+    words = [w for w in rest.split() if w not in _PLACE_WORDS and not w.startswith("рукавич")]
+    return " ".join(words) or title_key(title)
+
+
+def _trigrams(text: str) -> set[str]:
+    # Як pg_trgm: кожне слово з двома пробілами спереду й одним ззаду
+    return {f"  {w} "[i : i + 3] for w in text.split() for i in range(len(w) + 1)}
+
+
+def title_similarity(a: str, b: str) -> float:
+    first, second = _trigrams(a), _trigrams(b)
+    return len(first & second) / len(first | second) if first and second else 0.0
+
+
 async def replacement_candidates(
-    session: AsyncSession, place_id: str, title: str, limit: int = 3
+    session: AsyncSession, place_id: str, title: str, graph: PlaceGraph, limit: int = 3
 ) -> list[Document]:
-    """Чинні документи того самого місця з такою самою чи схожою назвою (D-37)."""
-    key = title_key(title)
-    similarity = func.similarity(Document.title_key, key)
+    """Чинні документи того самого місця з такою самою чи схожою назвою (D-37).
+
+    Схожість — за темою назви, без місця; документів одного місця кілька десятків, тож
+    рахуємо в Python.
+    """
+    key, topic = title_key(title), topic_key(title, graph)
     rows = await session.scalars(
-        select(Document)
-        .where(
-            Document.is_current,
-            Document.place_id == place_id,
-            or_(Document.title_key == key, similarity >= SIMILAR_TITLE),
-        )
-        .order_by(similarity.desc(), Document.sent_at.desc())
-        .limit(limit)
+        select(Document).where(Document.is_current, Document.place_id == place_id)
     )
-    return list(rows)
+    scored = [
+        (1.0 if d.title_key == key else title_similarity(topic, topic_key(d.title, graph)), d)
+        for d in rows
+    ]
+    similar = [(score, d) for score, d in scored if score >= SIMILAR_TITLE]
+    similar.sort(key=lambda item: (item[0], item[1].sent_at), reverse=True)
+    return [d for _, d in similar[:limit]]
 
 
 async def create(
