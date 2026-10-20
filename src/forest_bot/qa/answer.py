@@ -186,12 +186,18 @@ class Answerer:
             session.add(log)
             await session.flush()
             qa_id = log.id
+        cited = {p.passage.document_id: p.passage for p in parts}
+        short = {i: short_title(p.title, self.graph.get(p.place_id)) for i, p in cited.items()}
+        repeated = {t for t in short.values() if list(short.values()).count(t) > 1}
+        # Дві кнопки «📄 Членські внески» для двох місць не розрізнити — додаємо місце
         sources = {
-            p.passage.document_id: Source(
-                p.passage.document_id,
-                short_title(p.passage.title, self.graph.get(p.passage.place_id)),
+            i: Source(
+                i,
+                f"{short[i]} · {self.graph.get(p.place_id).name}"
+                if short[i] in repeated
+                else short[i],
             )
-            for p in parts
+            for i, p in cited.items()
         }
         logger.info(
             "Питання → %s: %s, джерел %d, %s, токенів %s+%s, %d мс",
