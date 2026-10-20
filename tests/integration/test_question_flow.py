@@ -115,6 +115,22 @@ async def test_follow_up_keeps_place_and_offers_another(asking: Asking) -> None:
     assert asking.last().text == texts.ASK_QUESTION_PLACE
 
 
+async def test_off_topic_follow_up_is_refused_and_keeps_context(asking: Asking) -> None:
+    # D-31: «Яка завтра погода?» після питання про дуб — не уточнення, а не про ліс
+    await asking.ask("Скільки внесок під дубом?")
+    asking.groq.answer = lambda user: (
+        {"found": False, "parts": [], "differs": False, "about_forest": False}
+        if "погода" in user
+        else groq_without_place_guess(user)
+    )
+    await asking.ask("Яка завтра погода?")
+    assert asking.last().text == texts.OFF_TOPIC
+    assert asking.last().reply_markup is None
+    # Контекст лишився від питання про дуб
+    await asking.ask("А до якого числа?")
+    assert asking.last().text.startswith(texts.FROM_CONTEXT.format(place="рукавички «Під дубом»"))
+
+
 async def test_wrong_answer_goes_to_review(asking: Asking) -> None:
     await asking.ask("Скільки внесок під дубом?")
     async with asking.sessions() as session:

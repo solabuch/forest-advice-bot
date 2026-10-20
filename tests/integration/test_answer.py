@@ -15,6 +15,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from forest_bot import texts
 from forest_bot.llm.client import GroqClient
 from forest_bot.models import QaLog, Unanswered
 from forest_bot.places import load_places
@@ -136,6 +137,33 @@ async def test_no_place_asks_with_buttons(forest: Sessions) -> None:
     assert reply.needs_place
     async with forest() as session:
         assert await session.scalar(select(QaLog)) is None
+
+
+async def test_off_topic_without_place_is_refused_politely(forest: Sessions) -> None:
+    # D-31: не про ліс — чемна відмова з підказкою, а не кнопки місць
+    groq = FakeGroq(lambda _: {"place_id": None, "confidence": 0.0, "about_forest": False})
+    reply = await answerer(forest, groq).ask("Яка завтра погода?")
+    assert (reply.off_topic, reply.needs_place, reply.text) == (True, False, texts.OFF_TOPIC)
+
+
+async def test_off_topic_with_place_is_not_unanswered(forest: Sessions) -> None:
+    # D-31, D-36: «квиток на літак під дубом» — не порада, якої бракує
+    await documents(forest, ("pid-dubom", "Членські внески рукавички «Під дубом»"))
+    groq = FakeGroq(
+        lambda _: {"found": False, "parts": [], "differs": False, "about_forest": False}
+    )
+    reply = await answerer(forest, groq).ask("Скільки коштує квиток на літак під дубом?")
+    assert (reply.off_topic, reply.text) == (True, texts.OFF_TOPIC)
+    async with forest() as session:
+        assert await session.scalar(select(Unanswered)) is None
+
+
+async def test_found_advice_is_never_hidden_as_off_topic(forest: Sessions) -> None:
+    # D-31: «не про ліс» діє лише разом із «не знайшов» — знайдену пораду не ховаємо
+    await documents(forest, ("pid-dubom", "Членські внески рукавички «Під дубом»"))
+    groq = FakeGroq(lambda user: {**every_fragment(user), "about_forest": False})
+    reply = await answerer(forest, groq).ask("Скільки внесок під дубом?")
+    assert (reply.found, reply.off_topic) == (True, False)
 
 
 async def test_several_places_each_with_shared_once(forest: Sessions) -> None:

@@ -86,6 +86,9 @@ class Result:
     # Очікування кейса: питає кнопками / порада є / джерела
     asks_place: bool = False
     expect_found: bool = True
+    # D-31: «не про ліс» — чемна відмова; звичайне питання так відкидати не можна
+    expect_off_topic: bool = False
+    off_topic: bool = False
     expected_sources: int = 0
     found: bool = True
     found_ok: bool = True
@@ -145,7 +148,8 @@ class Eval:
 
     async def run_case(self, case: dict[str, Any]) -> Result:
         result = Result(case["id"], case.get("req", []), case["question"])
-        result.asks_place = not case.get("places")
+        result.expect_off_topic = bool(case.get("off_topic"))
+        result.asks_place = not case.get("places") and not result.expect_off_topic
         result.expect_found = case.get("found", True)
         result.expected_sources = len(case.get("sources", []))
         today = date.fromisoformat(str(case.get("today", self.today)))
@@ -165,6 +169,13 @@ class Eval:
             result.error = str(error)
             return result
         result.seconds = time.monotonic() - started
+        result.off_topic = reply.off_topic
+        if result.expect_off_topic or reply.off_topic:
+            result.answer = reply.text
+            result.places = list(reply.place_ids)
+            result.found = False
+            result.found_ok = reply.off_topic == result.expect_off_topic
+            return result
         expected_places = list(case.get("places", []))
         result.places = list(reply.place_ids)
         if not expected_places:
@@ -235,7 +246,10 @@ class Eval:
 
 
 def summary(results: list[Result]) -> dict[str, Any]:
-    answering = [r for r in results if not r.asks_place and r.error is None]
+    answering = [
+        r for r in results if not r.asks_place and not r.expect_off_topic and r.error is None
+    ]
+    off_topic = [r for r in results if r.expect_off_topic and r.error is None]
     with_sources = [r for r in answering if r.expected_sources]
     facts_total = sum(r.facts_total for r in answering)
     facts_found = facts_total - sum(len(r.facts_missing) for r in answering)
@@ -255,6 +269,9 @@ def summary(results: list[Result]) -> dict[str, Any]:
         "not_found_ok": sum(not r.found for r in no_advice),
         "not_found_cases": len(no_advice),
         "false_not_found": sum(1 for r in answering if r.expect_found and not r.found),
+        "off_topic_ok": sum(r.off_topic for r in off_topic),
+        "off_topic_cases": len(off_topic),
+        "false_off_topic": sum(r.off_topic for r in results if not r.expect_off_topic),
         "first_ok": sum(bool(f) for f in firsts),
         "first_total": len(firsts),
         "hit": sum(hits),
@@ -282,6 +299,8 @@ def report(results: list[Result], stats: dict[str, Any], models: tuple[str, ...]
         f"| Ключові факти | {stats['facts_found']}/{stats['facts_total']} |",
         f"| «Не знайшов», коли поради немає | {stats['not_found_ok']}/{stats['not_found_cases']} |",
         f"| Хибне «не знайшов» | {stats['false_not_found']} |",
+        f"| «Не про ліс» — чемна відмова | {stats['off_topic_ok']}/{stats['off_topic_cases']} |",
+        f"| Хибне «не про ліс» | {stats['false_off_topic']} |",
         f"| Конкретна порада першою | {stats['first_ok']}/{stats['first_total']} |",
         f"| Пошук: потрібні документи серед знайдених | {stats['hit']}/{stats['hit_total']} |",
         f"| Час відповіді p50 / p95 | {stats['p50_s']:.1f} / {stats['p95_s']:.1f} с |",
@@ -303,7 +322,9 @@ def report(results: list[Result], stats: dict[str, Any], models: tuple[str, ...]
             problems.append(f"помилка: {r.error}")
         if not r.place_ok:
             problems.append(f"місце: {r.places}")
-        if not r.found_ok:
+        if not r.found_ok and r.off_topic != r.expect_off_topic:
+            problems.append("«не про ліс» — не так")
+        elif not r.found_ok:
             problems.append("знайшов/не знайшов — не так")
         if r.missing_sources:
             problems.append(f"бракує джерел: {r.missing_sources}")
