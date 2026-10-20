@@ -16,6 +16,7 @@ jobs:
     outputs:
       release_created: ${{ steps.rp.outputs.release_created }}
       tag_name: ${{ steps.rp.outputs.tag_name }}
+      version: ${{ steps.rp.outputs.version }}
     steps:
       - id: rp
         uses: googleapis/release-please-action@v5
@@ -24,4 +25,13 @@ jobs:
           manifest-file: .release-please-manifest.json
 
   # Тег від GITHUB_TOKEN не запускає інших workflow, тому образ релізу
-  # збирається звідси через workflow_call (додається разом із Dockerfile)
+  # збирається звідси через workflow_call
+  image:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/image.yml
+    with:
+      version: ${{ needs.release-please.outputs.version }}
+    permissions:
+      contents: read
+      packages: write
