@@ -3,7 +3,7 @@
 # Базові образи — за digest: збірка відтворювана, оновлює Dependabot
 ARG PYTHON_IMAGE=python:3.13-slim-bookworm@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641
 
-FROM ghcr.io/astral-sh/uv:0.13.1@sha256:4a1f3666816dafadd20ceb71eac9a7d56d7ef30279f7d64048519ab901ada336 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.9@sha256:d3b601f0c7b118bc1753febf7c41cc80981df678445e0254284eecf84db79a7d AS uv
 
 # --- builder: віртуальне оточення лише з runtime-залежностями ---
 FROM ${PYTHON_IMAGE} AS builder
